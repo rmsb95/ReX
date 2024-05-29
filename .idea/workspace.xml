@@ -4,20 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="6b7920f4-a821-47d0-b518-dbff62dc9ca0" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/ReX.iml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/profiles_settings.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/MTF.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/NNPS.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ReXNNPS.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ReXfunc.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dinosauricon.ico" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
-    </list>
+    <list default="true" id="6b7920f4-a821-47d0-b518-dbff62dc9ca0" name="Changes" comment="v 0.1 NNPS &amp; MTF work" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -33,6 +20,12 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
+  <component name="GithubPullRequestsUISettings"><![CDATA[{
+  "selectedUrlAndAccountId": {
+    "url": "https://github.com/rmsb95/ReX",
+    "accountId": "e0640f6e-6a7d-4868-b120-b9a3b012e4a6"
+  }
+}]]></component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 1
 }</component>
@@ -100,7 +93,20 @@
       <option name="presentableId" value="Default" />
       <updated>1716541895703</updated>
     </task>
+    <task id="LOCAL-00001" summary="v 0.1 NNPS &amp; MTF work">
+      <option name="closed" value="true" />
+      <created>1716973432038</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1716973432038</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="v 0.1 NNPS &amp; MTF work" />
+    <option name="LAST_COMMIT_MESSAGE" value="v 0.1 NNPS &amp; MTF work" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
