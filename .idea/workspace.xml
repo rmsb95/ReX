@@ -4,19 +4,9 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="6b7920f4-a821-47d0-b518-dbff62dc9ca0" name="Changes" comment="v 0.1 NNPS &amp; MTF work">
-      <change afterPath="$PROJECT_DIR$/Jungle.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ReXDQE.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ReXMTF.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/resources/ReX.ui" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/resources/ReX2.ui" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/resources/ReX_DQE.ui" afterDir="false" />
+    <list default="true" id="6b7920f4-a821-47d0-b518-dbff62dc9ca0" name="Changes" comment="v 1.0 MTF, NPS, NNPS y DQE">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/MTF.py" beforeDir="false" afterPath="$PROJECT_DIR$/MTF.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReXNNPS.py" beforeDir="false" afterPath="$PROJECT_DIR$/ReXNNPS.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReXfunc.py" beforeDir="false" afterPath="$PROJECT_DIR$/ReXfunc.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/dinosauricon.ico" beforeDir="false" afterPath="$PROJECT_DIR$/resources/dinosauricon.ico" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -66,7 +56,7 @@
     "Python.main.executor": "Run",
     "Python.mi_interfaz.executor": "Run",
     "RunOnceActivity.ShowReadmeOnStart": "true",
-    "git-widget-placeholder": "master",
+    "git-widget-placeholder": "main",
     "ignore.virus.scanning.warn.message": "true",
     "last_opened_file_path": "C:/Users/rafa_/PycharmProjects/ReX",
     "settings.editor.selected.configurable": "http.proxy"
@@ -137,12 +127,21 @@
       <option name="project" value="LOCAL" />
       <updated>1716973650385</updated>
     </task>
-    <option name="localTasksCounter" value="3" />
+    <task id="LOCAL-00003" summary="v 1.0 MTF, NPS, NNPS y DQE">
+      <option name="closed" value="true" />
+      <created>1719934923926</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1719934923926</updated>
+    </task>
+    <option name="localTasksCounter" value="4" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="v 0.1 NNPS &amp; MTF work" />
-    <option name="LAST_COMMIT_MESSAGE" value="v 0.1 NNPS &amp; MTF work" />
+    <MESSAGE value="v 1.0 MTF, NPS, NNPS y DQE" />
+    <option name="LAST_COMMIT_MESSAGE" value="v 1.0 MTF, NPS, NNPS y DQE" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
