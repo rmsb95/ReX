@@ -51,11 +51,11 @@ def evaluateCentering(image, meanDose):
     areThereLowerPixels = np.any(lowerPixels)
 
     # Show figure for visual evaluation
-    plt.figure()
-    plt.imshow(lowerPixels, cmap='gray')
-    plt.title('Pixel values below threshold')
-    plt.colorbar()
-    plt.show()
+    #plt.figure()
+    #plt.imshow(lowerPixels, cmap='gray')
+    #plt.title('Pixel values below threshold')
+    #plt.colorbar()
+    #plt.show()
 
     return areThereLowerPixels
 
@@ -132,11 +132,11 @@ def edgeDetection(image):
     threshold = 0.5  # Este es un valor de ejemplo, puede necesitar ser ajustado
     edgeMatrix = (edges > threshold).astype(int)
 
-    plt.figure()  # Creates a new figure window
-    plt.imshow(edgeMatrix, cmap='gray')  # Display the original image
-    plt.colorbar()  # Display a color bar
-    plt.title('Edge Matrix')  # Title of the figure
-    plt.show()
+    # plt.figure()  # Creates a new figure window
+    # plt.imshow(edgeMatrix, cmap='gray')  # Display the original image
+    # plt.colorbar()  # Display a color bar
+    # plt.title('Edge Matrix')  # Title of the figure
+    # plt.show()
 
     # Extraer coordenadas de los puntos del borde
     y, x = np.where(edgeMatrix == 1)
@@ -196,3 +196,17 @@ def exportData(X, Y1, Y2, col_names, path, name, format):
 
     else:
         raise ValueError('Format not supported. Use "excel" o "csv".')
+
+def read_data(file_path, exportFormat):
+    """ Read data from a file in Excel or CSV format."""
+    if exportFormat == 'excel':
+        return pd.read_excel(file_path)
+    elif exportFormat == 'csv':
+        return pd.read_csv(file_path)
+    else:
+        raise ValueError(f"Unsopported file format for {file_path}")
+
+def find_closest(df, target_frequency, frequencyColumnName):
+    """Find the row with the closest frequency to the target frequency."""
+    idx = (df[frequencyColumnName] - target_frequency).abs().idxmin()
+    return df.loc[idx]

@@ -63,10 +63,7 @@ for file in files:
 
     # Read dcm file
     dicomFile = pydicom.dcmread(file)
-    #dicomImage = dicomFile.pixel_array
-
-    dicomImage = np.fliplr(np.flipud(dicomFile.pixel_array))
-
+    dicomImage = dicomFile.pixel_array
 
     plt.figure()  # Creates a new figure window
     plt.imshow(dicomImage, cmap='gray')  # Display the original image

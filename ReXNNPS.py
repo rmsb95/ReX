@@ -12,22 +12,17 @@ import os
 import glob
 import pydicom
 import math
+import pandas as pd
 import numpy as np
 import numpy.fft as fft
-import matplotlib.pyplot as plt
 import ReXfunc as ReX
 
 
-def calculateNNPS(path, conversion, a, b, exportFormat, progress_callback, log_queue):
+def calculateNNPS(path, conversion, a, b, exportFormat, progress_callback=None):
     # ---------------------
     # Section 1. Parameters
     # ---------------------
-    # path = 'C:/Users/rafa_/OneDrive/Residencia/01. R1/02. Radiodiagnóstico/Aplicaciones/Cálculo NPS/NNPS/Alta dosis/'
     files = glob.glob(os.path.join(path, '*.DCM'))
-    progress_callback(0)
-    log_queue.put("NPS calculation started.")
-    # Export format (saved in path): 'excel' or 'csv'
-    # exportFormat = 'excel'
 
     # Centered ROI size (mm)
     cropSize = 125
@@ -49,10 +44,12 @@ def calculateNNPS(path, conversion, a, b, exportFormat, progress_callback, log_q
     # ---------------------
     # Section 2. Image Loop
     # ---------------------
-    progress_callback(20)
+    for n in range(1, 20, 1):
+        progress_callback(n)
+
     i = 0
     for file in files:
-
+        print(f"Working with {file}")
         # Read dcm file
         dicomFile = pydicom.dcmread(file)
         dicomImage = dicomFile.pixel_array
@@ -65,6 +62,8 @@ def calculateNNPS(path, conversion, a, b, exportFormat, progress_callback, log_q
         else:
             print("PixelSpacing is not available in DICOM file. Default value (0.1 mm) will be used.")
             pixelSpacing = 0.1
+
+        print(f"Pixel size is {pixelSpacing}")
 
         # Linearize data (from Mean Pixel Value to Dose)
         if conversion == 'linear':
@@ -84,6 +83,8 @@ def calculateNNPS(path, conversion, a, b, exportFormat, progress_callback, log_q
 
         # Get dose value to calculate NNPS later on
         dose[i] = croppedImageArray.mean()
+
+        print(f"Dose of file {file} is {dose[i]} µGy")
 
         # Evaluate adequacy of the centering (not IEC)
         if evaluateCentering == 1:
@@ -114,17 +115,16 @@ def calculateNNPS(path, conversion, a, b, exportFormat, progress_callback, log_q
             else:
                 print(f'Cropped ROI {i} is well centered.')
 
+
         # Substracting the 2D polynomial of best fit
         residualImage = ReX.adjustedImage(croppedImage)
         # TO INVESTIGATE: IS IT POSSIBLE TO GET BETTER FITTING?
 
-        progress_callback(40)
 
         # Create 256x256 px^2 ROIs. Overlapped 128 px.
         if numROIs == 0:
             nps_data = []
 
-        log_queue.put("Creating ROIs.")
         for y in range(0, cropHeight - roiSize + 1, stepSize):
             for x in range(0, cropWidth - roiSize + 1, stepSize):
                 # Get the ROI
@@ -137,8 +137,11 @@ def calculateNNPS(path, conversion, a, b, exportFormat, progress_callback, log_q
                 fft_result = fft.fft2(roi)
                 nps_data.append(np.abs(fft_result) ** 2)
 
-        i = i + 1  # Para el final del bucle for
+        i = i + 1
 
+    for n in range(30, 50, 1):
+        progress_callback(n)
+    progress_callback(55)
     # ---------------------
     #   Section 3. 2D NPS
     # ---------------------
@@ -153,18 +156,18 @@ def calculateNNPS(path, conversion, a, b, exportFormat, progress_callback, log_q
     # Average dose of the images
     meanDose = np.mean(dose[:])
     print(f'The average dose of the images is: {meanDose:.2f} µGy.')
-    log_queue.put(f"Mean estimated dose: { meanDose }.")
+
+    progress_callback(60)
 
     # 2D NPS
-    log_queue.put("Calculating 2D NPS.")
     NPS = pixelSpacing * pixelSpacing / (numROIs * 256 * 256) * sum_nps_data
     NPS = np.fft.fftshift(NPS[0:256, 0:256])
 
     # ---------------------
     #   Section 4. 1D NPS
     # ---------------------
-    log_queue.put("Calculating 1D NPS.")
-    progress_callback(60)
+    progress_callback(65)
+
     # Defining some parameters
     fint = 0.01 / pixelSpacing # Binning frequency (IEC)
     NPS_dim = NPS.shape[0]
@@ -175,11 +178,15 @@ def calculateNNPS(path, conversion, a, b, exportFormat, progress_callback, log_q
     X, Y = np.meshgrid(frequenciesGrid, frequenciesGrid)
     frequenciesRadial = np.sqrt(X**2 + Y**2)
 
+    progress_callback(70)
+
     # Select 14 vertical lines & 14 horizontal lines, but not the center
     lineIndexes = np.concatenate([
         np.arange(center - 7, center),  # Left
         np.arange(center + 1, center + 8)   # Right
     ]).astype(int)
+
+    progress_callback(75)
 
     # Initialize the vector to store the averages of NPS based on spatial frequencies
     frequencies = np.linspace(0, np.max(frequenciesRadial), int(center))
@@ -187,7 +194,6 @@ def calculateNNPS(path, conversion, a, b, exportFormat, progress_callback, log_q
     NPS_horizontal = np.zeros_like(frequencies)
 
     progress_callback(80)
-    log_queue.put("Smoothing 1D NPS.")
     for i, f in enumerate(frequencies):
         lowerLimit = f - 0.5 * fint
         upperLimit = f + 0.5 * fint
@@ -201,6 +207,9 @@ def calculateNNPS(path, conversion, a, b, exportFormat, progress_callback, log_q
         horizontalMask = mask & np.isin(Y, frequenciesGrid[lineIndexes])
         NPS_vertical[i] = np.mean(NPS[verticalMask])
         NPS_horizontal[i] = np.mean(NPS[horizontalMask])
+        print(f"Finished mean number {i}!")
+
+    progress_callback(85)
 
     # Removing NaN values
     validValues = ~np.isnan(NPS_vertical)
@@ -214,7 +223,6 @@ def calculateNNPS(path, conversion, a, b, exportFormat, progress_callback, log_q
     # ---------------------
     #   Section 5. NNPS
     # ---------------------
-    log_queue.put("Calculating NNPS.")
     progress_callback(90)
     NNPS_vertical = NPS_vertical / (meanDose ** 2)
     NNPS_horizontal = NPS_horizontal / (meanDose ** 2)
@@ -222,11 +230,53 @@ def calculateNNPS(path, conversion, a, b, exportFormat, progress_callback, log_q
     # ---------------------
     #   Section 6. Export
     # ---------------------
+    for n in range(90,99,1):
+        progress_callback(i)
     # Export NPS data
     ReX.exportData(verticalFrequencies, NPS_vertical, NPS_horizontal, ['Frequencies','NPS Vertical', 'NPS Horizontal'], path, 'NPS_data', exportFormat)
     # Export NNPS data
     ReX.exportData(verticalFrequencies, NNPS_vertical, NNPS_horizontal, ['Frequencies','NNPS Vertical', 'NNPS Horizontal'], path, 'NNPS_data', exportFormat)
 
     progress_callback(100)
-    log_queue.put(f"Finished! Data files saved in { path }")
     progress_callback(0)
+
+    # ------------------------
+    #   Section 7. Data to DQE
+    # ------------------------
+    # It prepares data for DQE calculation
+    # Calculate Nyquist frequency
+    fNyq = 1 / (2 * pixelSpacing)
+
+    # Create target frequencies array
+    target_frequencies = np.arange(0.5, fNyq + 0.5, 0.5)
+    target_frequencies = target_frequencies[target_frequencies <= fNyq]
+
+    # Read data
+    if exportFormat == 'excel':
+        file_path = os.path.join(path, 'NNPS_data.xlsx')
+        df = pd.read_excel(file_path)
+    elif exportFormat == 'csv':
+        file_path = os.path.join(path, 'NNPS_data.csv')
+        df = pd.read_csv(file_path)
+
+
+    # Get closest NNPS values for each target frequency
+    results = []
+    for freq in target_frequencies:
+        closest_row = ReX.find_closest(df, freq, 'Frequencies')
+        results.append({
+            'Frequencies (1/mm)': freq,
+            'NNPS Horizontal': closest_row['NNPS Horizontal'],
+            'NNPS Vertical': closest_row['NNPS Vertical']
+        })
+
+    # Create the dataframe
+    NNPS_to_DQE = pd.DataFrame(results)
+
+    # Save final DataFrame
+    if exportFormat == 'excel':
+        output_file_path = os.path.join(path, 'NNPS_to_DQE.xlsx')
+        NNPS_to_DQE.to_excel(output_file_path, index=False)
+    elif exportFormat == 'csv':
+        output_file_path = os.path.join(path, 'NNPS_to_DQE.csv')
+        NNPS_to_DQE.to_csv(output_file_path, index=False)
