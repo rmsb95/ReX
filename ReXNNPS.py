@@ -186,6 +186,7 @@ def calculateNNPS(path, conversion, a, b, exportFormat, progress_callback=None):
         np.arange(center + 1, center + 8)   # Right
     ]).astype(int)
 
+
     progress_callback(75)
 
     # Initialize the vector to store the averages of NPS based on spatial frequencies
@@ -233,9 +234,9 @@ def calculateNNPS(path, conversion, a, b, exportFormat, progress_callback=None):
     for n in range(90,99,1):
         progress_callback(i)
     # Export NPS data
-    ReX.exportData(verticalFrequencies, NPS_vertical, NPS_horizontal, ['Frequencies','NPS Vertical', 'NPS Horizontal'], path, 'NPS_data', exportFormat)
+    ReX.exportData(verticalFrequencies, NPS_horizontal, NPS_vertical, ['Frequencies (1/mm)','NPS Horizontal', 'NPS Vertical'], path, 'NPS_data', exportFormat)
     # Export NNPS data
-    ReX.exportData(verticalFrequencies, NNPS_vertical, NNPS_horizontal, ['Frequencies','NNPS Vertical', 'NNPS Horizontal'], path, 'NNPS_data', exportFormat)
+    ReX.exportData(verticalFrequencies,  NNPS_horizontal, NNPS_vertical, ['Frequencies (1/mm)','NNPS Horizontal', 'NNPS Vertical'], path, 'NNPS_data', exportFormat)
 
     progress_callback(100)
     progress_callback(0)
@@ -261,22 +262,35 @@ def calculateNNPS(path, conversion, a, b, exportFormat, progress_callback=None):
 
 
     # Get closest NNPS values for each target frequency
-    results = []
-    for freq in target_frequencies:
-        closest_row = ReX.find_closest(df, freq, 'Frequencies')
-        results.append({
-            'Frequencies (1/mm)': freq,
-            'NNPS Horizontal': closest_row['NNPS Horizontal'],
-            'NNPS Vertical': closest_row['NNPS Vertical']
-        })
+    # results = []
+    # for freq in target_frequencies:
+    #     closest_row = ReX.find_closest(df, freq, 'Frequencies (1/mm)')
+    #     results.append({
+    #         'Frequencies (1/mm)': freq,
+    #         'NNPS Horizontal': closest_row['NNPS Horizontal'],
+    #         'NNPS Vertical': closest_row['NNPS Vertical']
+    #     })
+
+    # Initialize results dictionary
+    results = {freq: {} for freq in target_frequencies}
+    print("Result dictionary initialized")
+
+    NNPS_hor_df = ReX.process_file(file_path, target_frequencies, 'NNPS Horizontal', exportFormat)
+    for freq, value in NNPS_hor_df.items():
+        results[freq]['NNPS Horizontal'] = value
+
+    NNPS_ver_df = ReX.process_file(file_path, target_frequencies, 'NNPS Vertical', exportFormat)
+    for freq, value in NNPS_ver_df.items():
+        results[freq]['NNPS Vertical'] = value
 
     # Create the dataframe
-    NNPS_to_DQE = pd.DataFrame(results)
+    NNPS_to_DQE = pd.DataFrame(results).T
+    NNPS_to_DQE.index.name = 'Frequencies (1/mm)'
 
     # Save final DataFrame
     if exportFormat == 'excel':
         output_file_path = os.path.join(path, 'NNPS_to_DQE.xlsx')
-        NNPS_to_DQE.to_excel(output_file_path, index=False)
+        NNPS_to_DQE.to_excel(output_file_path)
     elif exportFormat == 'csv':
         output_file_path = os.path.join(path, 'NNPS_to_DQE.csv')
-        NNPS_to_DQE.to_csv(output_file_path, index=False)
+        NNPS_to_DQE.to_csv(output_file_path)

@@ -10,8 +10,6 @@
 # ---------------------
 import os
 import pandas as pd
-from PyQt5.QtWidgets import QFileDialog
-
 
 def calculateDQE(nnps_file, mtf_file, beamQuality, kermaAir):
 
@@ -32,15 +30,28 @@ def calculateDQE(nnps_file, mtf_file, beamQuality, kermaAir):
     nnps_data = pd.read_excel(nnps_file)
     mtf_data = pd.read_excel(mtf_file)
 
+    print(nnps_data)
+    print(mtf_data)
+
     # Rename frequency columns in nnps_data to make it merge later
+    print("renaming")
     nnps_data = nnps_data.rename(columns={nnps_data.columns[0]: mtf_data.columns[0]})
 
     # Asegurar que ambos dataframes están alineados por la columna de frecuencia
+    print("merging data")
     merged_data = pd.merge(mtf_data, nnps_data, on=mtf_data.columns[0])
+    print(merged_data)
 
     # Calcular los nuevos valores
-    merged_data['DQE vertical'] = (merged_data['MTF vertical'] ** 2 / W_entrada) / merged_data['NNPS Vertical']
-    merged_data['DQE horizontal'] = (merged_data['MTF horizontal'] ** 2 / W_entrada) / merged_data[
-        'NNPS Horizontal']
+    print("To calculate new values")
+    try:
+        merged_data['DQE vertical'] = (merged_data['MTF Vertical'] ** 2 / W_entrada) / merged_data['NNPS Vertical']
+        merged_data['DQE horizontal'] = (merged_data['MTF Horizontal'] ** 2 / W_entrada) / merged_data['NNPS Horizontal']
+        return merged_data
+    except Exception as e:
+        print(f"Error processing: {e}")
+        return None
 
+
+    print("to return")
     return merged_data

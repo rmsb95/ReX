@@ -15,6 +15,7 @@ class Worker(QThread):
     progress = pyqtSignal(int)
     finished = pyqtSignal()
     error = pyqtSignal(str)
+    log_signal = pyqtSignal(str)
 
     def __init__(self, taskType, path, functionType, a, b, exportFormat):
         super().__init__()
@@ -28,13 +29,14 @@ class Worker(QThread):
     def run(self):
         try:
             if self.taskType == "NNPS":
-                # self.logText.append("Cálculo de NPS y NNPS iniciado.")
+                self.log_signal.emit(">> Cálculo de NPS y NNPS iniciado.")
                 calculateNNPS(self.path, self.functionType, self.a, self.b, self.exportFormat, self.progress.emit)
-                # self.logText.append("Ejecución de NPS y NNPS finalizada.")
+                self.log_signal.emit(">> Cálculo de NPS y NNPS finalizado.")
+
             elif self.taskType == "MTF":
-                # self.logText.append("Cálculo de MTF iniciado.")
+                self.log_signal.emit(">> Cálculo de MTF iniciado.")
                 calculateMTF(self.path, self.functionType, self.a, self.b, self.exportFormat, self.progress.emit)
-                # self.logText.append("Cálculo de MTF finalizado.")
+                self.log_signal.emit(">> Cálculo de MTF finalizado.")
 
         except Exception as e:
             self.error.emit(str(e))
@@ -269,6 +271,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.worker.progress.connect(self.update_progress)
         self.worker.finished.connect(self.on_finished)
         self.worker.error.connect(self.show_error)
+        self.worker.log_signal.connect(self.log_message)
 
         # Deshabilitar el botón mientras se ejecuta la tarea
         self.Button_NPS.setEnabled(False)

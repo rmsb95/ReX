@@ -210,3 +210,40 @@ def find_closest(df, target_frequency, frequencyColumnName):
     """Find the row with the closest frequency to the target frequency."""
     idx = (df[frequencyColumnName] - target_frequency).abs().idxmin()
     return df.loc[idx]
+
+def fit_polynomial_and_predict(df, target_frequencies, frequencyColumnName, valuesColumnName):
+    """Fit a third-degree polynomial to the data and predict values for target frequencies"""
+    # Remove NaN values from the relevant columns
+    df = df[[frequencyColumnName, valuesColumnName]].dropna()
+
+    # In case of NNPS, we eliminate first values for better fit
+    if valuesColumnName in ['NNPS Horizontal', 'NNPS Vertical']:
+        df = df[df[frequencyColumnName] >= 0.5]
+
+    # Extract frequencies and values
+    frequencies = df[frequencyColumnName].values
+    values = df[valuesColumnName].values
+
+    # Fit a third-degree polynomial
+    poly_coeffs = np.polyfit(frequencies, values, 3)
+    print(poly_coeffs)
+
+    # Predict values for the target frequencies
+    predict_values = np.polyval(poly_coeffs, target_frequencies)
+
+    return predict_values
+
+def process_file(file_path, target_frequencies, valuesName, exportFormat):
+    """Process a file to find the predicted MTF or NNPS values for the target frequencies using polynomial fitting."""
+    try:
+        # Read data from the file
+        df = read_data(file_path, exportFormat)
+        df = df.dropna(axis=1, how='all')
+
+        # Fit polynomial and predict values
+        predicted_values = fit_polynomial_and_predict(df, target_frequencies, 'Frequencies (1/mm)', valuesName)
+        return dict(zip(target_frequencies, predicted_values))
+
+    except Exception as e:
+        print(f"Error processing file {file_path}: {e}")
+        return None

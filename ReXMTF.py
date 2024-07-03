@@ -281,38 +281,45 @@ def calculateMTF(path, conversion, a, b, exportFormat, progress_callback=None):
     # it creates a file with the values prepared to calculate DQE later
     if verticalFlag == 1 & horizontalFlag == 1:
 
-        def process_file(file_path, target_frequencies):
-            """Process a file to find the closest MTF values for the target frequencies."""
-            try:
-                df = ReX.read_data(file_path,exportFormat)
-                df = df.dropna(axis=1, how='all')  # Delete useless columns
-
-                results = {}
-                for freq in target_frequencies:
-                    closest_row = ReX.find_closest(df, freq, 'Frequencies (1/mm)')
-                    results[freq] = closest_row['MTF']
-                return results
-
-            except Exception as e:
-                print(f"Error processing file {file_path}: {e}")
-                return None
+        # def process_file(file_path, target_frequencies):
+        #     """Process a file to find the closest MTF values for the target frequencies."""
+        #     try:
+        #         df = ReX.read_data(file_path,exportFormat)
+        #         df = df.dropna(axis=1, how='all')  # Delete useless columns
+        #
+        #         results = {}
+        #         for freq in target_frequencies:
+        #             closest_row = ReX.find_closest(df, freq, 'Frequencies (1/mm)')
+        #             results[freq] = closest_row['MTF']
+        #         return results
+        #
+        #     except Exception as e:
+        #         print(f"Error processing file {file_path}: {e}")
+        #         return None
 
         # Define target frequencies
+        print("Defining Target frequencies.")
         target_frequencies = np.arange(0.5, fNyq + 0.5, 0.5)
         target_frequencies = target_frequencies[target_frequencies <= fNyq]
+        print("Target frequencies defined.")
 
         # Initialize results dictionary
         results = {freq: {} for freq in target_frequencies}
+        print("Result dictionary initialized")
 
         # Process each file in the directory
+        print("Bucle for")
         for file_name in os.listdir(path):
+            print(file_name)
             file_path = os.path.join(path, file_name)
             if "MTF_vertical" in file_name:
-                data = process_file(file_path, target_frequencies)
+                print("MTF vertical")
+                data = ReX.process_MTF_file(file_path, target_frequencies, 'MTF', exportFormat)
                 for freq, value in data.items():
                     results[freq]['MTF Vertical'] = value
             elif "MTF_horizontal" in file_name:
-                data = process_file(file_path, target_frequencies)
+                print("MTF horizontal")
+                data = ReX.process_MTF_file(file_path, target_frequencies, 'MTF', exportFormat)
                 for freq, value in data.items():
                     results[freq]['MTF Horizontal'] = value
 
