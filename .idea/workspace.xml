@@ -4,12 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="6b7920f4-a821-47d0-b518-dbff62dc9ca0" name="Changes" comment="v 1.1 MTF, NPS, NNPS y DQE">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReXMTF.py" beforeDir="false" afterPath="$PROJECT_DIR$/ReXMTF.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReXNNPS.py" beforeDir="false" afterPath="$PROJECT_DIR$/ReXNNPS.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReXfunc.py" beforeDir="false" afterPath="$PROJECT_DIR$/ReXfunc.py" afterDir="false" />
-    </list>
+    <list default="true" id="6b7920f4-a821-47d0-b518-dbff62dc9ca0" name="Changes" comment="ReXfunc: is_dicom_files function to validate dicom files in the path, regardless of the extension. Implemented in ReXMTF &amp; ReXDQE." />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -61,7 +56,7 @@
     "git-widget-placeholder": "main",
     "ignore.virus.scanning.warn.message": "true",
     "last_opened_file_path": "C:/Users/rafa_/PycharmProjects/ReX",
-    "settings.editor.selected.configurable": "http.proxy"
+    "settings.editor.selected.configurable": "vcs.Git"
   }
 }]]></component>
   <component name="RecentsManager">
@@ -145,14 +140,23 @@
       <option name="project" value="LOCAL" />
       <updated>1719997354154</updated>
     </task>
-    <option name="localTasksCounter" value="5" />
+    <task id="LOCAL-00005" summary="ReXfunc: is_dicom_files function to validate dicom files in the path, regardless of the extension. Implemented in ReXMTF &amp; ReXDQE.">
+      <option name="closed" value="true" />
+      <created>1720369646679</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1720369646679</updated>
+    </task>
+    <option name="localTasksCounter" value="6" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="v 0.1 NNPS &amp; MTF work" />
     <MESSAGE value="v 1.0 MTF, NPS, NNPS y DQE" />
     <MESSAGE value="v 1.1 MTF, NPS, NNPS y DQE" />
-    <option name="LAST_COMMIT_MESSAGE" value="v 1.1 MTF, NPS, NNPS y DQE" />
+    <MESSAGE value="ReXfunc: is_dicom_files function to validate dicom files in the path, regardless of the extension. Implemented in ReXMTF &amp; ReXDQE." />
+    <option name="LAST_COMMIT_MESSAGE" value="ReXfunc: is_dicom_files function to validate dicom files in the path, regardless of the extension. Implemented in ReXMTF &amp; ReXDQE." />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>

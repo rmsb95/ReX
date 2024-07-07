@@ -1,0 +1,52 @@
+Index: README.md
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+># ReX\r\n#### Developed by: @rmsb95\r\n#### Date: 06/2024\r\n#### Version: 1.0\r\nApps developed for the calculation of NPS, NNPS, MTF & DQE parameters in the context of Radiodiagnostic Devices QA.\r\n\r\n## 1. Instructions\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/README.md b/README.md
+--- a/README.md	(revision dd473a129e22165ab88b4e0b4d45ada5ceffee3e)
++++ b/README.md	(date 1719937139014)
+@@ -2,6 +2,21 @@
+ #### Developed by: @rmsb95
+ #### Date: 06/2024
+ #### Version: 1.0
+-Apps developed for the calculation of NPS, NNPS, MTF & DQE parameters in the context of Radiodiagnostic Devices QA.
++Apps developed for the calculation of NPS, NNPS, MTF & DQE parameters in the context of Radiodiagnostics Devices QA.
++The calculations have been made following UNE-EN IEC 62220-1-1:2015, with some additional considerations when explicit
++instructions where not given.
++
++## 1. Codes
++### 1.1 Jungle
++The User Interface (UI) code is hosted here. It is the main python file that calls the other functions for calculation.
++### 1.2. ReXfunc
++In order to improve reading, some functions used in ReXMTF, ReXNNPS & ReXDQE have been hosted here.
++### 1.3. ReXMTF
++
++### 1.4. ReXNNPS
++
++### 1.5. ReXDQE
+ 
+-## 1. Instructions
++## 2. Resources
++
++## 3. Instructions
+Index: .idea/workspace.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<project version=\"4\">\r\n  <component name=\"AutoImportSettings\">\r\n    <option name=\"autoReloadType\" value=\"SELECTIVE\" />\r\n  </component>\r\n  <component name=\"ChangeListManager\">\r\n    <list default=\"true\" id=\"6b7920f4-a821-47d0-b518-dbff62dc9ca0\" name=\"Changes\" comment=\"v 1.0 MTF, NPS, NNPS y DQE\">\r\n      <change beforePath=\"$PROJECT_DIR$/.idea/workspace.xml\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/.idea/workspace.xml\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/README.md\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/README.md\" afterDir=\"false\" />\r\n    </list>\r\n    <option name=\"SHOW_DIALOG\" value=\"false\" />\r\n    <option name=\"HIGHLIGHT_CONFLICTS\" value=\"true\" />\r\n    <option name=\"HIGHLIGHT_NON_ACTIVE_CHANGELIST\" value=\"false\" />\r\n    <option name=\"LAST_RESOLUTION\" value=\"IGNORE\" />\r\n  </component>\r\n  <component name=\"FileTemplateManagerImpl\">\r\n    <option name=\"RECENT_TEMPLATES\">\r\n      <list>\r\n        <option value=\"Python Script\" />\r\n      </list>\r\n    </option>\r\n  </component>\r\n  <component name=\"Git.Settings\">\r\n    <option name=\"RECENT_GIT_ROOT_PATH\" value=\"$PROJECT_DIR$\" />\r\n  </component>\r\n  <component name=\"GitHubPullRequestSearchHistory\">{\r\n  &quot;lastFilter&quot;: {\r\n    &quot;state&quot;: &quot;OPEN&quot;,\r\n    &quot;assignee&quot;: &quot;rmsb95&quot;\r\n  }\r\n}</component>\r\n  <component name=\"GithubPullRequestsUISettings\">{\r\n  &quot;selectedUrlAndAccountId&quot;: {\r\n    &quot;url&quot;: &quot;https://github.com/rmsb95/ReX&quot;,\r\n    &quot;accountId&quot;: &quot;e0640f6e-6a7d-4868-b120-b9a3b012e4a6&quot;\r\n  }\r\n}</component>\r\n  <component name=\"ProjectColorInfo\">{\r\n  &quot;associatedIndex&quot;: 1\r\n}</component>\r\n  <component name=\"ProjectId\" id=\"2guKCcZrQVu797kbNTT8LhbtJYD\" />\r\n  <component name=\"ProjectLevelVcsManager\" settingsEditedManually=\"true\" />\r\n  <component name=\"ProjectViewState\">\r\n    <option name=\"hideEmptyMiddlePackages\" value=\"true\" />\r\n    <option name=\"showLibraryContents\" value=\"true\" />\r\n  </component>\r\n  <component name=\"PropertiesComponent\"><![CDATA[{\r\n  \"keyToString\": {\r\n    \"Python.Jungle.executor\": \"Run\",\r\n    \"Python.MTF.executor\": \"Debug\",\r\n    \"Python.NNPS.executor\": \"Run\",\r\n    \"Python.ReXDQE.executor\": \"Run\",\r\n    \"Python.ReXMTF.executor\": \"Run\",\r\n    \"Python.ReXNNPS.executor\": \"Run\",\r\n    \"Python.ReXfunc.executor\": \"Run\",\r\n    \"Python.main.executor\": \"Run\",\r\n    \"Python.mi_interfaz.executor\": \"Run\",\r\n    \"RunOnceActivity.ShowReadmeOnStart\": \"true\",\r\n    \"git-widget-placeholder\": \"main\",\r\n    \"ignore.virus.scanning.warn.message\": \"true\",\r\n    \"last_opened_file_path\": \"C:/Users/rafa_/PycharmProjects/ReX\",\r\n    \"settings.editor.selected.configurable\": \"http.proxy\"\r\n  }\r\n}]]></component>\r\n  <component name=\"RecentsManager\">\r\n    <key name=\"CopyFile.RECENT_KEYS\">\r\n      <recent name=\"C:\\Users\\rafa_\\PycharmProjects\\ReX\" />\r\n    </key>\r\n    <key name=\"MoveFile.RECENT_KEYS\">\r\n      <recent name=\"C:\\Users\\rafa_\\PycharmProjects\\ReX\\resources\" />\r\n      <recent name=\"C:\\Users\\rafa_\\PycharmProjects\\ReX\\resources_old\" />\r\n    </key>\r\n  </component>\r\n  <component name=\"RunManager\">\r\n    <configuration name=\"main\" type=\"PythonConfigurationType\" factoryName=\"Python\" nameIsGenerated=\"true\">\r\n      <module name=\"ReX\" />\r\n      <option name=\"ENV_FILES\" value=\"\" />\r\n      <option name=\"INTERPRETER_OPTIONS\" value=\"\" />\r\n      <option name=\"PARENT_ENVS\" value=\"true\" />\r\n      <envs>\r\n        <env name=\"PYTHONUNBUFFERED\" value=\"1\" />\r\n      </envs>\r\n      <option name=\"SDK_HOME\" value=\"\" />\r\n      <option name=\"WORKING_DIRECTORY\" value=\"$PROJECT_DIR$\" />\r\n      <option name=\"IS_MODULE_SDK\" value=\"true\" />\r\n      <option name=\"ADD_CONTENT_ROOTS\" value=\"true\" />\r\n      <option name=\"ADD_SOURCE_ROOTS\" value=\"true\" />\r\n      <option name=\"SCRIPT_NAME\" value=\"$PROJECT_DIR$/main.py\" />\r\n      <option name=\"PARAMETERS\" value=\"\" />\r\n      <option name=\"SHOW_COMMAND_LINE\" value=\"false\" />\r\n      <option name=\"EMULATE_TERMINAL\" value=\"false\" />\r\n      <option name=\"MODULE_MODE\" value=\"false\" />\r\n      <option name=\"REDIRECT_INPUT\" value=\"false\" />\r\n      <option name=\"INPUT_FILE\" value=\"\" />\r\n      <method v=\"2\" />\r\n    </configuration>\r\n  </component>\r\n  <component name=\"SharedIndexes\">\r\n    <attachedChunks>\r\n      <set>\r\n        <option value=\"bundled-python-sdk-0509580d9d50-746f403e7f0c-com.jetbrains.pycharm.community.sharedIndexes.bundled-PC-241.14494.241\" />\r\n      </set>\r\n    </attachedChunks>\r\n  </component>\r\n  <component name=\"SpellCheckerSettings\" RuntimeDictionaries=\"0\" Folders=\"0\" CustomDictionaries=\"0\" DefaultDictionary=\"application-level\" UseSingleDictionary=\"true\" transferred=\"true\" />\r\n  <component name=\"TaskManager\">\r\n    <task active=\"true\" id=\"Default\" summary=\"Default task\">\r\n      <changelist id=\"6b7920f4-a821-47d0-b518-dbff62dc9ca0\" name=\"Changes\" comment=\"\" />\r\n      <created>1716541895703</created>\r\n      <option name=\"number\" value=\"Default\" />\r\n      <option name=\"presentableId\" value=\"Default\" />\r\n      <updated>1716541895703</updated>\r\n    </task>\r\n    <task id=\"LOCAL-00001\" summary=\"v 0.1 NNPS &amp; MTF work\">\r\n      <option name=\"closed\" value=\"true\" />\r\n      <created>1716973432038</created>\r\n      <option name=\"number\" value=\"00001\" />\r\n      <option name=\"presentableId\" value=\"LOCAL-00001\" />\r\n      <option name=\"project\" value=\"LOCAL\" />\r\n      <updated>1716973432038</updated>\r\n    </task>\r\n    <task id=\"LOCAL-00002\" summary=\"v 0.1 NNPS &amp; MTF work\">\r\n      <option name=\"closed\" value=\"true\" />\r\n      <created>1716973650385</created>\r\n      <option name=\"number\" value=\"00002\" />\r\n      <option name=\"presentableId\" value=\"LOCAL-00002\" />\r\n      <option name=\"project\" value=\"LOCAL\" />\r\n      <updated>1716973650385</updated>\r\n    </task>\r\n    <task id=\"LOCAL-00003\" summary=\"v 1.0 MTF, NPS, NNPS y DQE\">\r\n      <option name=\"closed\" value=\"true\" />\r\n      <created>1719934923926</created>\r\n      <option name=\"number\" value=\"00003\" />\r\n      <option name=\"presentableId\" value=\"LOCAL-00003\" />\r\n      <option name=\"project\" value=\"LOCAL\" />\r\n      <updated>1719934923926</updated>\r\n    </task>\r\n    <option name=\"localTasksCounter\" value=\"4\" />\r\n    <servers />\r\n  </component>\r\n  <component name=\"VcsManagerConfiguration\">\r\n    <MESSAGE value=\"v 0.1 NNPS &amp; MTF work\" />\r\n    <MESSAGE value=\"v 1.0 MTF, NPS, NNPS y DQE\" />\r\n    <option name=\"LAST_COMMIT_MESSAGE\" value=\"v 1.0 MTF, NPS, NNPS y DQE\" />\r\n  </component>\r\n  <component name=\"XDebuggerManager\">\r\n    <breakpoint-manager>\r\n      <breakpoints>\r\n        <line-breakpoint enabled=\"true\" suspend=\"THREAD\" type=\"python-line\">\r\n          <url>file://$PROJECT_DIR$/MTF.py</url>\r\n          <line>154</line>\r\n          <option name=\"timeStamp\" value=\"33\" />\r\n        </line-breakpoint>\r\n      </breakpoints>\r\n      <default-breakpoints>\r\n        <breakpoint type=\"python-exception\">\r\n          <properties notifyOnTerminate=\"true\" exception=\"BaseException\">\r\n            <option name=\"notifyOnTerminate\" value=\"true\" />\r\n          </properties>\r\n        </breakpoint>\r\n      </default-breakpoints>\r\n    </breakpoint-manager>\r\n  </component>\r\n</project>
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/.idea/workspace.xml b/.idea/workspace.xml
+--- a/.idea/workspace.xml	(revision dd473a129e22165ab88b4e0b4d45ada5ceffee3e)
++++ b/.idea/workspace.xml	(date 1719936995227)
+@@ -5,7 +5,6 @@
+   </component>
+   <component name="ChangeListManager">
+     <list default="true" id="6b7920f4-a821-47d0-b518-dbff62dc9ca0" name="Changes" comment="v 1.0 MTF, NPS, NNPS y DQE">
+-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+       <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+     </list>
+     <option name="SHOW_DIALOG" value="false" />
