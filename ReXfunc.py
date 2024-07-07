@@ -2,6 +2,7 @@ import os
 import numpy as np
 import pandas as pd
 import math
+import pydicom
 from matplotlib import pyplot as plt
 from scipy.optimize import curve_fit
 from skimage import data, filters
@@ -247,3 +248,22 @@ def process_file(file_path, target_frequencies, valuesName, exportFormat):
     except Exception as e:
         print(f"Error processing file {file_path}: {e}")
         return None
+
+
+def is_dicom_file(filepath):
+    """Check if a file is a valid DICOM file"""
+    try:
+        pydicom.dcmread(filepath, stop_before_pixels=True)
+        return True
+    except Exception as e:
+        return False
+
+def find_dicom_files(directory):
+    """Find all DICOM files in a directory, regardless of their file extension"""
+    dicom_files = []
+    for root, _, files in os.walk(directory):
+        for file in files:
+            filepath = os.path.join(root, file)
+            if is_dicom_file(filepath):
+                dicom_files.append(filepath)
+    return dicom_files

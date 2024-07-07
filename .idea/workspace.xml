@@ -4,11 +4,8 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="6b7920f4-a821-47d0-b518-dbff62dc9ca0" name="Changes" comment="v 1.0 MTF, NPS, NNPS y DQE">
+    <list default="true" id="6b7920f4-a821-47d0-b518-dbff62dc9ca0" name="Changes" comment="v 1.1 MTF, NPS, NNPS y DQE">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Jungle.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReXDQE.py" beforeDir="false" afterPath="$PROJECT_DIR$/ReXDQE.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/ReXMTF.py" beforeDir="false" afterPath="$PROJECT_DIR$/ReXMTF.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/ReXNNPS.py" beforeDir="false" afterPath="$PROJECT_DIR$/ReXNNPS.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/ReXfunc.py" beforeDir="false" afterPath="$PROJECT_DIR$/ReXfunc.py" afterDir="false" />
@@ -58,7 +55,7 @@
     "Python.ReXMTF.executor": "Run",
     "Python.ReXNNPS.executor": "Run",
     "Python.ReXfunc.executor": "Run",
-    "Python.main.executor": "Run",
+    "Python.main.executor": "Debug",
     "Python.mi_interfaz.executor": "Run",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "git-widget-placeholder": "main",
@@ -140,13 +137,22 @@
       <option name="project" value="LOCAL" />
       <updated>1719934923926</updated>
     </task>
-    <option name="localTasksCounter" value="4" />
+    <task id="LOCAL-00004" summary="v 1.1 MTF, NPS, NNPS y DQE">
+      <option name="closed" value="true" />
+      <created>1719997354154</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1719997354154</updated>
+    </task>
+    <option name="localTasksCounter" value="5" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="v 0.1 NNPS &amp; MTF work" />
     <MESSAGE value="v 1.0 MTF, NPS, NNPS y DQE" />
-    <option name="LAST_COMMIT_MESSAGE" value="v 1.0 MTF, NPS, NNPS y DQE" />
+    <MESSAGE value="v 1.1 MTF, NPS, NNPS y DQE" />
+    <option name="LAST_COMMIT_MESSAGE" value="v 1.1 MTF, NPS, NNPS y DQE" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>

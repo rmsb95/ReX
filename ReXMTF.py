@@ -21,12 +21,11 @@ def calculateMTF(path, conversion, a, b, exportFormat, progress_callback=None):
     # ---------------------
     # Section 1. Parameters
     # ---------------------
-    files = glob.glob(os.path.join(path, '*.DCM'))
+    files = ReX.find_dicom_files(path)
 
     # Flags to determine if both orientations have been obtained
     verticalFlag = 0
     horizontalFlag = 0
-
 
     # ROI size (mm) (IEC 62220-1-1:2015) considering vertical position of the edge
     roiSizeA = 100  # width
@@ -314,12 +313,12 @@ def calculateMTF(path, conversion, a, b, exportFormat, progress_callback=None):
             file_path = os.path.join(path, file_name)
             if "MTF_vertical" in file_name:
                 print("MTF vertical")
-                data = ReX.process_MTF_file(file_path, target_frequencies, 'MTF', exportFormat)
+                data = ReX.process_file(file_path, target_frequencies, 'MTF', exportFormat)
                 for freq, value in data.items():
                     results[freq]['MTF Vertical'] = value
             elif "MTF_horizontal" in file_name:
                 print("MTF horizontal")
-                data = ReX.process_MTF_file(file_path, target_frequencies, 'MTF', exportFormat)
+                data = ReX.process_file(file_path, target_frequencies, 'MTF', exportFormat)
                 for freq, value in data.items():
                     results[freq]['MTF Horizontal'] = value
 

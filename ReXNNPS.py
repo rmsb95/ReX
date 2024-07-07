@@ -22,7 +22,7 @@ def calculateNNPS(path, conversion, a, b, exportFormat, progress_callback=None):
     # ---------------------
     # Section 1. Parameters
     # ---------------------
-    files = glob.glob(os.path.join(path, '*.DCM'))
+    files = ReX.find_dicom_files(path)
 
     # Centered ROI size (mm)
     cropSize = 125
