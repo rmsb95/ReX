@@ -75,7 +75,7 @@ def calculateMTF(path, conversion, a, b, exportFormat, progress_callback=None):
             doseImage = (dicomImage.astype(float) - b) / a
 
         elif conversion == 'log':
-            doseImage = math.exp((dicomImage.astype(float) - b) / a)
+            doseImage = np.exp((dicomImage.astype(float) - b) / a)
 
         # Substitute negative values -> zeros
         doseImage[doseImage < 0] = 0

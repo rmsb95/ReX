@@ -4,7 +4,12 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="6b7920f4-a821-47d0-b518-dbff62dc9ca0" name="Changes" comment="ReXfunc: is_dicom_files function to validate dicom files in the path, regardless of the extension. Implemented in ReXMTF &amp; ReXDQE." />
+    <list default="true" id="6b7920f4-a821-47d0-b518-dbff62dc9ca0" name="Changes" comment="ReXfunc: is_dicom_files function to validate dicom files in the path, regardless of the extension. Implemented in ReXMTF &amp; ReXDQE.">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ReXMTF.py" beforeDir="false" afterPath="$PROJECT_DIR$/ReXMTF.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ReXNNPS.py" beforeDir="false" afterPath="$PROJECT_DIR$/ReXNNPS.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ReXfunc.py" beforeDir="false" afterPath="$PROJECT_DIR$/ReXfunc.py" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />

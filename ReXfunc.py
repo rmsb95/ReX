@@ -7,6 +7,7 @@ from matplotlib import pyplot as plt
 from scipy.optimize import curve_fit
 from skimage import data, filters
 from sklearn.decomposition import PCA
+from scipy.interpolate import CubicSpline
 
 
 def cropImage(image, roiSizeX, roiSizeY, delta_x, delta_y, despCenterX, despCenterY):
@@ -46,21 +47,40 @@ def cropImage(image, roiSizeX, roiSizeY, delta_x, delta_y, despCenterX, despCent
     croppedImage = image[startY:endY, startX:endX]
     return croppedImage, cropHeight, cropWidth
 
-def evaluateCentering(image, meanDose):
-    threshold = 0.8 * meanDose
-    lowerPixels = image <= threshold
-    areThereLowerPixels = np.any(lowerPixels)
 
-    # Show figure for visual evaluation
-    #plt.figure()
-    #plt.imshow(lowerPixels, cmap='gray')
-    #plt.title('Pixel values below threshold')
-    #plt.colorbar()
-    #plt.show()
+def evaluateCentering(image, meanDose):
+    """
+    Evaluates if there are pixels in an image with a dose significantly lower than the mean dose.
+
+    Parameters:
+    image (numpy array): A 2D array representing the image where each element is the dose at a pixel.
+    meanDose (float): The mean dose calculated from the image.
+
+    Returns:
+    bool: True if there is at least one pixel with a dose less than or equal to 80% of the mean dose, False otherwise.
+    """
+    # Calculate the threshold as 80% of the mean dose
+    threshold = 0.8 * meanDose
+
+    # Create a boolean mask where each element is True if the corresponding pixel in the image
+    # has a value less than or equal to the threshold, and False otherwise
+    lowerPixels = image <= threshold
+
+    # Check if there is at least one pixel with a True value in the mask
+    areThereLowerPixels = np.any(lowerPixels)
 
     return areThereLowerPixels
 
 def adjustedImage(imageData):
+    """
+    Adjusts the image data by fitting a polynomial surface and subtracting it to obtain residuals.
+
+    Parameters:
+    imageData (numpy array): A 2D array representing the image data.
+
+    Returns:
+    numpy array: A 2D array representing the residual image after polynomial adjustment.
+    """
     # Create a mesh according to image dimensions
     X, Y = np.meshgrid(np.arange(imageData.shape[1]), np.arange(imageData.shape[0]))
 
@@ -83,13 +103,22 @@ def adjustedImage(imageData):
     # Ensure X and Y are passed as separate arrays within a single array
     S = poly22((X, Y), *popt)
 
-    # Subtract the polynomial from the original image to obtain the residuals.
+    # Subtract the polynomial from the original image to obtain the residuals
     residualImage = Z - S
 
     return residualImage
 
 
 def correctedImage(imageData):
+    """
+    Corrects the image data by fitting a polynomial surface and adjusting the values to normalize the image.
+
+    Parameters:
+    imageData (numpy array): A 2D array representing the image data.
+
+    Returns:
+    numpy array: A 2D array representing the corrected image.
+    """
     # Create a mesh according to image dimensions
     X, Y = np.meshgrid(np.arange(imageData.shape[1]), np.arange(imageData.shape[0]))
 
@@ -121,16 +150,21 @@ def correctedImage(imageData):
     return corrImage
 
 def edgeDetection(image):
-    # TBR: APPLY DIFFERENT EDGE_ALGORITHM
-    # Create a boolean matrix where 1 represents the edge
-    # edgeMatrix = filters.sobel(image)
+    """
+    Detects edges in the image and determines the orientation of the edges using PCA.
 
-    # Aplicar el filtro de Sobel para detectar bordes en la imagen
+    Parameters:
+    image (numpy array): A 2D array representing the image data.
+
+    Returns:
+    tuple: A tuple containing the angle of the first principal component and the string orientation.
+    """
+    # Apply the Roberts filter to detect edges in the image
     edges = filters.roberts(image)
 
-    # Umbralizar la imagen para obtener una matriz binaria
-    # Este umbral puede requerir ajustes según la imagen
-    threshold = 0.5  # Este es un valor de ejemplo, puede necesitar ser ajustado
+    # Threshold the edge-detected image to obtain a binary matrix
+    # This value may require adjustment
+    threshold = 0.5
     edgeMatrix = (edges > threshold).astype(int)
 
     # plt.figure()  # Creates a new figure window
@@ -139,20 +173,20 @@ def edgeDetection(image):
     # plt.title('Edge Matrix')  # Title of the figure
     # plt.show()
 
-    # Extraer coordenadas de los puntos del borde
+    # Extract coordinates of the edge points
     y, x = np.where(edgeMatrix == 1)
     points = np.column_stack((x, y))
 
-    # Aplicar PCA sobre los puntos de bordes
+    # Apply PCA to the edge points
     pca = PCA(n_components=2)
     pca.fit(points)
 
-    # El primer componente principal es la dirección del eje de máxima varianza
+    # The first principal component represents the direction of maximum variance
     first_component = pca.components_[0]
     angle_rad = np.arctan2(first_component[1], first_component[0])
     angle = angle_rad * 180 / math.pi
 
-    # Get string orientation
+    # Determine string orientation based on the angle
     absangle = abs(angle)
     if 0 <= absangle <= 5:
         orientation = 'horizontal'
@@ -164,6 +198,21 @@ def edgeDetection(image):
     return angle, orientation
 
 def exportData(X, Y1, Y2, col_names, path, name, format):
+    """
+    Exports data to a specified format (Excel or CSV).
+
+    Parameters:
+    X (array-like): The data for the first column.
+    Y1 (array-like): The data for the second column.
+    Y2 (array-like): The data for the third column.
+    col_names (list): A list of column names for the DataFrame.
+    path (str): The directory path where the file will be saved.
+    name (str): The name of the file to be saved.
+    format (str): The format of the file to be saved ('excel' or 'csv').
+
+    Raises:
+    ValueError: If the format is not supported.
+    """
     # Check if Y2 is different from Y1
     if np.array_equal(Y1, Y2):
         Y2 = np.zeros(len(Y2))
@@ -175,15 +224,19 @@ def exportData(X, Y1, Y2, col_names, path, name, format):
         col_names[2]: Y2
     })
 
-    # Just in case
+    # Just in case, covnert format to lowercase
     format = format.lower()
 
-    # Verify format
+    # Ensure the path exists
+    if not os.path.exists(path):
+        os.makedirs(path)
+
+    # Verify format and save the file accordingly
     if format == 'excel':
         # Prepare the full path
         fullname = path + '/' + name + '.xlsx'
         filename = os.path.join(path, fullname)
-        # Write the dataframe
+        # Write the dataframe to an Excel file
         data.to_excel(filename, index=False)
         print(f'Data saved in Excel file: {filename}')
 
@@ -191,7 +244,7 @@ def exportData(X, Y1, Y2, col_names, path, name, format):
         # Prepare the full path
         fullname = path + '/' + name + '.csv'
         filename = os.path.join(path, fullname)
-        # Write the dataframe
+        # Write the dataframe to a CSV file
         data.to_csv(filename, index=False)
         print(f'Data saved in CSV file: {filename}')
 
@@ -234,6 +287,23 @@ def fit_polynomial_and_predict(df, target_frequencies, frequencyColumnName, valu
 
     return predict_values
 
+def  fit_spline_and_predict(df, target_frequencies, frequencyColumnName, valuesColumnName):
+    """Fit a cubic spline to the data and predict values for target frequencies"""
+    # Remove NaN values from the relevant columns
+    df = df[[frequencyColumnName, valuesColumnName]].dropna()
+
+    # Extract frequencies and values
+    frequencies = df[frequencyColumnName].values
+    values = df[valuesColumnName].values
+
+    # Fit a cubic spline
+    spline = CubicSpline(frequencies, values)
+
+    # Predict values for the target frequencies
+    predict_values = spline(target_frequencies)
+
+    return predict_values
+
 def process_file(file_path, target_frequencies, valuesName, exportFormat):
     """Process a file to find the predicted MTF or NNPS values for the target frequencies using polynomial fitting."""
     try:
@@ -242,7 +312,7 @@ def process_file(file_path, target_frequencies, valuesName, exportFormat):
         df = df.dropna(axis=1, how='all')
 
         # Fit polynomial and predict values
-        predicted_values = fit_polynomial_and_predict(df, target_frequencies, 'Frequencies (1/mm)', valuesName)
+        predicted_values = fit_spline_and_predict(df, target_frequencies, 'Frequencies (1/mm)', valuesName)
         return dict(zip(target_frequencies, predicted_values))
 
     except Exception as e:
