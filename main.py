@@ -29,14 +29,22 @@ class Worker(QThread):
     def run(self):
         try:
             if self.taskType == "NNPS":
+                self.log_signal.emit(">> -------------------------------")
                 self.log_signal.emit(">> Cálculo de NPS y NNPS iniciado.")
+                self.log_signal.emit(">> -------------------------------")
                 calculateNNPS(self.path, self.functionType, self.a, self.b, self.exportFormat, self.progress.emit)
+                self.log_signal.emit(">> ---------------------------------")
                 self.log_signal.emit(">> Cálculo de NPS y NNPS finalizado.")
+                self.log_signal.emit(">> ---------------------------------")
 
             elif self.taskType == "MTF":
+                self.log_signal.emit(">> ------------------------")
                 self.log_signal.emit(">> Cálculo de MTF iniciado.")
+                self.log_signal.emit(">> ------------------------")
                 calculateMTF(self.path, self.functionType, self.a, self.b, self.exportFormat, self.progress.emit)
+                self.log_signal.emit(">> --------------------------")
                 self.log_signal.emit(">> Cálculo de MTF finalizado.")
+                self.log_signal.emit(">> --------------------------")
 
         except Exception as e:
             self.error.emit(str(e))
