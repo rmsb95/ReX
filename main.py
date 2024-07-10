@@ -2,12 +2,14 @@ import sys
 import os
 import pydicom
 import numpy as np
+import matplotlib.pyplot as plt
+import ReXfunc as ReX
 from ReXNNPS import calculateNNPS
 from ReXMTF import calculateMTF
 from ReXDQE import calculateDQE
-from PyQt5.QtWidgets import QApplication, QMainWindow, QFileDialog, QMessageBox, QDialog
+from PyQt5.QtWidgets import QApplication, QMainWindow, QFileDialog, QMessageBox, QDialog, QTableWidget, QTableWidgetItem, QVBoxLayout, QLabel
 from PyQt5.QtGui import QPixmap, QImage, QIcon
-from PyQt5.QtCore import Qt, QThread, pyqtSignal
+from PyQt5.QtCore import Qt, QThread, pyqtSignal, QTimer
 from resources.main_window import Ui_MainWindow
 from resources.dqe_window import Ui_Dialog as Form
 
@@ -29,22 +31,12 @@ class Worker(QThread):
     def run(self):
         try:
             if self.taskType == "NNPS":
-                self.log_signal.emit(">> -------------------------------")
                 self.log_signal.emit(">> Cálculo de NPS y NNPS iniciado.")
-                self.log_signal.emit(">> -------------------------------")
-                calculateNNPS(self.path, self.functionType, self.a, self.b, self.exportFormat, self.progress.emit)
-                self.log_signal.emit(">> ---------------------------------")
-                self.log_signal.emit(">> Cálculo de NPS y NNPS finalizado.")
-                self.log_signal.emit(">> ---------------------------------")
+                self.results = calculateNNPS(self.path, self.functionType, self.a, self.b, self.exportFormat, self.progress.emit)
 
             elif self.taskType == "MTF":
-                self.log_signal.emit(">> ------------------------")
                 self.log_signal.emit(">> Cálculo de MTF iniciado.")
-                self.log_signal.emit(">> ------------------------")
-                calculateMTF(self.path, self.functionType, self.a, self.b, self.exportFormat, self.progress.emit)
-                self.log_signal.emit(">> --------------------------")
-                self.log_signal.emit(">> Cálculo de MTF finalizado.")
-                self.log_signal.emit(">> --------------------------")
+                self.results = calculateMTF(self.path, self.functionType, self.a, self.b, self.exportFormat, self.progress.emit)
 
         except Exception as e:
             self.error.emit(str(e))
@@ -71,15 +63,23 @@ class DQEWindow(QDialog, Form):
         # It opens a QFileDialog to select the NNPS_to_DQE file
         file_name, _ = QFileDialog.getOpenFileName(self, "Selecciona el archivo NNPS_to_DQE", "", "All Files (*);;Excel Files (*.xlsx);;CSV Files (*.csv)")
         if file_name:
-            self.nnps_file = file_name
-            print("Selected NNPS file:", file_name)
+            if 'NNPS_to_DQE' in file_name:
+                self.nnps_file = file_name
+                print("Selected NNPS file:", file_name)
+            else:
+                QMessageBox.warning(self, "Advertencia", "El archivo seleccionado no es NNPS_to_DQE.")
+                self.nnps_file = None
 
     def select_mtf_file(self):
         # It opens a QFileDialog to select the MTF_to_DQE file
         file_name, _ = QFileDialog.getOpenFileName(self, "Selecciona el archivo MTF_to_DQE", "", "All Files (*);;Excel Files (*.xlsx);;CSV Files (*.csv)")
         if file_name:
-            self.mtf_file = file_name
-            print("Selected MTF file:", file_name)
+            if 'MTF_to_DQE' in file_name:
+                self.mtf_file = file_name
+                print("Selected MTF file:", file_name)
+            else:
+                QMessageBox.warning(self, "Advertencia", "El archivo seleccionado no es MTF_to_DQE.")
+                self.mtf_file = None
 
     def run_calculation(self):
         # Determinar el RQA seleccionado
@@ -101,6 +101,9 @@ class DQEWindow(QDialog, Form):
 
         # Llamada a la función que calcula la DQE
         result = calculateDQE(self.nnps_file, self.mtf_file, beamQuality, kermaAire)
+
+        # Mostrar resultados en tabla y gráfica # PENDIENTE REVISAR
+        # ReX.show_results_table_and_graph(result, "Resultados de DQE")
 
         # Guardar el archivo
         options = QFileDialog.Options()
@@ -302,6 +305,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.Button_DQE.setEnabled(True)
         QMessageBox.information(self, "Completado", "El cálculo ha finalizado correctamente.")
 
+        # Mostrar resultados en tabla y gráfica
+        if hasattr(self.worker, 'results'):
+            ReX.show_results_table_and_graph(self.worker.results, f"Resultados de {self.worker.taskType}")
+
+
     def show_error(self, error_message):
         # Devolver la barra de progreso a 0
         self.progressBar.setValue(0)
@@ -348,6 +356,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.worker.progress.connect(self.update_progress)
         self.worker.finished.connect(self.on_finished)
         self.worker.error.connect(self.show_error)
+        self.worker.log_signal.connect(self.log_message)
 
         self.Button_MTF.setEnabled(False)
         self.Button_NPS.setEnabled(False)
@@ -355,13 +364,58 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         self.worker.start()
 
+class SplashScreen(QDialog):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("ReX")
+        self.setWindowFlags(Qt.FramelessWindowHint)
+
+        # Fondo de la pantalla de inicio
+        self.setStyleSheet("""
+            QDialog {
+                background-color: #1e1f22;
+                border: 2px solid #2b952b;
+                border-radius: 10px;
+            }
+        """)
+
+        # Layout y etiquetas
+        layout = QVBoxLayout()
+        layout.setAlignment(Qt.AlignCenter)
+
+        title = QLabel("ReX")
+        title.setStyleSheet("font-size: 48px; font-weight: bold; color: white;")
+        layout.addWidget(title)
+
+        subtitle = QLabel("Desarrolladores: @rmsb95 @aol\nVersión: 2024.1")
+        subtitle.setStyleSheet("font-size: 14px; color: white;")
+        layout.addWidget(subtitle)
+
+        # Espacio para la imagen
+        image_label = QLabel()
+        pixmap = QPixmap('resources/HUVM-tagline.png')
+        image_label.setPixmap(pixmap)
+        image_label.setAlignment(Qt.AlignBottom | Qt.AlignHCenter)
+        layout.addWidget(image_label)
+
+        self.setLayout(layout)
+
+        # Temporizador para cerrar la pantalla de inicio y abrir la ventana principal
+        QTimer.singleShot(5000, self.show_main_window)  # Cerrar después de 5 segundos
+
+    def show_main_window(self):
+        self.close()
+        self.main_window = MainWindow()
+        self.main_window.show()
 
 def main():
     app = QApplication(sys.argv)
-    window = MainWindow()
-    window.show()
-    sys.exit(app.exec())
 
+    # Mostrar la pantalla de inicio
+    splash = SplashScreen()
+    splash.show()
+
+    sys.exit(app.exec_())
 
 if __name__ == "__main__":
     main()

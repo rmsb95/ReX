@@ -336,6 +336,13 @@ def calculateMTF(path, conversion, a, b, exportFormat, progress_callback=None):
 
         print(f'Data saved as: {output_file_path}')
 
+        progress_callback(100)
+        progress_callback(0)
+        return final_df
 
-    progress_callback(100)
-    progress_callback(0)
+    else:
+        progress_callback(100)
+        progress_callback(0)
+        if (verticalFlag == 1 or horizontalFlag == 1):
+            return MTF_smoothed
+

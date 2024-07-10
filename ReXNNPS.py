@@ -294,3 +294,5 @@ def calculateNNPS(path, conversion, a, b, exportFormat, progress_callback=None):
     elif exportFormat == 'csv':
         output_file_path = os.path.join(path, 'NNPS_to_DQE.csv')
         NNPS_to_DQE.to_csv(output_file_path)
+
+    return NNPS_to_DQE

@@ -3,6 +3,9 @@ import numpy as np
 import pandas as pd
 import math
 import pydicom
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QIcon, QKeySequence
+from PyQt5.QtWidgets import QDialog, QVBoxLayout, QTableWidget, QTableWidgetItem, QApplication, QAction
 from matplotlib import pyplot as plt
 from scipy.optimize import curve_fit
 from skimage import data, filters
@@ -337,3 +340,92 @@ def find_dicom_files(directory):
             if is_dicom_file(filepath):
                 dicom_files.append(filepath)
     return dicom_files
+
+def show_results_table_and_graph(results, title):
+    show_results_graph(results, title)
+    class TableDialog(QDialog):
+        def __init__(self, results, title, parent=None):
+            super().__init__(parent)
+            self.setWindowTitle(title)
+            self.setWindowIcon(QIcon('resources/dinosauricon.ico'))
+            self.setWindowFlags(self.windowFlags() & ~Qt.WindowContextHelpButtonHint)  # Eliminar el icono de ayuda
+            self.resize(425, 450)
+
+            layout = QVBoxLayout()
+            self.table = QTableWidget()
+            df = pd.DataFrame(results)
+            df.reset_index(inplace=True)  # Restablecer el índice para incluir las frecuencias como columna
+
+            # Formatear solo las columnas de NNPS a notación científica con dos decimales
+            for column in df.columns:
+                if column != 'Frequencies (1/mm)':
+                    df[column] = df[column].apply(lambda x: f'{x:.2e}')
+
+            self.table.setRowCount(df.shape[0])
+            self.table.setColumnCount(df.shape[1])
+            self.table.setHorizontalHeaderLabels(df.columns)
+
+            for i in range(df.shape[0]):
+                for j in range(df.shape[1]):
+                    item = QTableWidgetItem(str(df.iat[i, j]))
+                    item.setFlags(item.flags() & ~Qt.ItemIsEditable)  # Hacer la celda de solo lectura
+                    self.table.setItem(i, j, item)
+
+            self.table.setSelectionBehavior(QTableWidget.SelectItems)
+            self.table.setSelectionMode(QTableWidget.ExtendedSelection)
+            self.table.setContextMenuPolicy(Qt.ActionsContextMenu)
+
+            copy_action = QAction("Copiar", self)
+            copy_action.setShortcut(QKeySequence.Copy)
+            copy_action.triggered.connect(self.copy_selection)
+            self.addAction(copy_action)
+
+            layout.addWidget(self.table)
+            self.setLayout(layout)
+
+        def copy_selection(self):
+            selection = self.table.selectedIndexes()
+            if selection:
+                # Obtener filas y columnas únicas seleccionadas
+                rows = sorted(set(index.row() for index in selection))
+                columns = sorted(set(index.column() for index in selection))
+                rowcount = rows[-1] - rows[0] + 1
+                colcount = columns[-1] - columns[0] + 1
+
+                # Crear una tabla con el tamaño adecuado para incluir los encabezados
+                table = [[''] * colcount for _ in range(rowcount)]
+
+                # Añadir los encabezados de las columnas solo una vez
+                headers = [self.table.horizontalHeaderItem(col).text() for col in columns]
+                table.insert(0, headers)  # Insertar los encabezados en la primera fila
+
+                # Llenar la tabla con los datos seleccionados
+                for index in selection:
+                    row = index.row() - rows[0] + 1  # Ajustar para los encabezados
+                    col = index.column() - columns[0]
+                    table[row][col] = self.table.item(index.row(), index.column()).text()
+
+                # Convertir la tabla a una cadena de texto tabulada
+                stream = '\n'.join('\t'.join(row) for row in table)
+                clipboard = QApplication.clipboard()
+                clipboard.setText(stream)
+
+    dialog = TableDialog(results, title)
+    dialog.exec_()
+
+def show_results_graph(results, title):
+    df = pd.DataFrame(results)
+
+    # Create plot
+    fig, ax = plt.subplots()
+    df.plot(ax=ax)
+    ax.set_xlabel('Frecuencias (1/mm)')
+    ax.set_ylabel('Valor')
+    ax.set_title(title)
+    ax.legend()
+
+    manager = plt.get_current_fig_manager()
+    manager.set_window_title(title)
+    fig.canvas.manager.window.setWindowIcon(QIcon('resources/dinosauricon.ico'))
+
+    plt.show()
