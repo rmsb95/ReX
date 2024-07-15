@@ -61,7 +61,7 @@ class DICOMOrganizer(QWidget):
                 row_position = self.dicom_table.rowCount()
                 self.dicom_table.insertRow(row_position)
                 self.dicom_table.setItem(row_position, 0, QTableWidgetItem(str(elem.tag)))
-                self.dicom_table.setItem(row_position, 1, QTableWidgetItem(str(elem.name)))
+                self.dicom_table.setItem(row_position, 1, QTableWidgetItem(elem.name))
                 self.dicom_table.setItem(row_position, 2, QTableWidgetItem(str(elem.value)))
 
         self.dicom_table.itemSelectionChanged.connect(self.update_selected_tags)
@@ -69,12 +69,13 @@ class DICOMOrganizer(QWidget):
     def update_selected_tags(self):
         self.selected_tags_list.clear()
         self.selected_tags = []
-        for item in self.dicom_table.selectedItems():
-            if item.column() == 0:
-                tag_str = item.text()
-                tag_tuple = tuple(int(t, 16) for t in tag_str.strip("()").split(", "))
-                self.selected_tags.append(tag_tuple)
-        self.selected_tags_list.addItems([str(tag) for tag in self.selected_tags])
+        selected_rows = self.dicom_table.selectionModel().selectedRows()
+        for row in selected_rows:
+            tag_str = self.dicom_table.item(row.row(), 0).text()
+            tag_tuple = tuple(int(t, 16) for t in tag_str.strip("()").split(", "))
+            tag_name = self.dicom_table.item(row.row(), 1).text()
+            self.selected_tags.append((tag_tuple, tag_name))
+        self.selected_tags_list.addItems([f"{tag[1]} ({tag[0]})" for tag in self.selected_tags])
 
     def select_directory(self):
         options = QFileDialog.Options()
@@ -91,6 +92,7 @@ class DICOMOrganizer(QWidget):
             return
 
         self.organize_dicom_files(self.directory)
+        QMessageBox.information(self, 'Success', 'Processing completed successfully!')
 
     def organize_dicom_files(self, directory):
         for subdir, _, files in os.walk(directory):
@@ -115,15 +117,15 @@ class DICOMOrganizer(QWidget):
 
     def create_destination_directory(self, ds):
         dir_parts = []
-        for tag in self.selected_tags:
-            element = ds.get(tag)  # Utilizamos ds.get(tag) en lugar de ds.data_element(tag)
+        for tag, name in self.selected_tags:
+            element = ds.get(tag)
             if element is None:
                 print(f"Tag {tag} not found")
                 return None
             try:
                 value = element.value
-                dir_parts.append(str(value))
-                print(f"Tag: {tag}, Value: {value}")
+                dir_parts.append(f"{name}_{str(value)}")
+                print(f"Tag: {tag}, Name: {name}, Value: {value}")
             except Exception as e:
                 print(f"Error retrieving value for tag {tag}: {e}")
                 return None
@@ -131,6 +133,7 @@ class DICOMOrganizer(QWidget):
 
     def report_invalid_file(self, file_path, message):
         print(f"Error with file {file_path}: {message}")
+        #QMessageBox.warning(self, 'Warning', f"Error with file {file_path}: {message}")
 
 
 if __name__ == '__main__':
