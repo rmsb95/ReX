@@ -2,53 +2,35 @@ import sys
 import os
 import pydicom
 import shutil
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QFileDialog, QTableWidget, \
-    QTableWidgetItem, QListWidget, QMessageBox
+import ReXfunc as ReX
 from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QApplication, QMainWindow, QFileDialog, QTableWidgetItem, QMessageBox, QListWidgetItem
+
+# Cargar la interfaz gráfica generada por PyQt Designer
+from resources.rexpath_window import Ui_Dialog
 
 
-class DICOMOrganizer(QWidget):
+class DICOMOrganizer(QMainWindow, Ui_Dialog):
     def __init__(self):
         super().__init__()
-        self.initUI()
+        self.setupUi(self)
         self.selected_tags = []
 
-    def initUI(self):
-        self.setWindowTitle('DICOM Organizer')
-        self.setGeometry(100, 100, 800, 600)
+        # Conectar los botones a sus respectivas funciones
+        self.load_dicom_btn.clicked.connect(self.load_dicom_file)
+        self.select_dir_btn.clicked.connect(self.select_directory)
+        self.process_btn.clicked.connect(self.process_directory)
 
-        layout = QVBoxLayout()
-
-        self.dicom_table = QTableWidget()
+        # Configurar la tabla
         self.dicom_table.setColumnCount(3)
         self.dicom_table.setHorizontalHeaderLabels(['Tag', 'Name', 'Value'])
-        self.dicom_table.setSelectionBehavior(QTableWidget.SelectRows)
-        self.dicom_table.setSelectionMode(QTableWidget.MultiSelection)
-        layout.addWidget(self.dicom_table)
-
-        self.selected_tags_list = QListWidget()
-        layout.addWidget(self.selected_tags_list)
-
-        btn_layout = QHBoxLayout()
-        load_dicom_btn = QPushButton('Load DICOM')
-        load_dicom_btn.clicked.connect(self.load_dicom_file)
-        btn_layout.addWidget(load_dicom_btn)
-
-        select_dir_btn = QPushButton('Select Directory')
-        select_dir_btn.clicked.connect(self.select_directory)
-        btn_layout.addWidget(select_dir_btn)
-
-        process_btn = QPushButton('Process')
-        process_btn.clicked.connect(self.process_directory)
-        btn_layout.addWidget(process_btn)
-
-        layout.addLayout(btn_layout)
-
-        self.setLayout(layout)
+        self.dicom_table.setSelectionBehavior(self.dicom_table.SelectRows)
+        self.dicom_table.setSelectionMode(self.dicom_table.MultiSelection)
+        self.dicom_table.itemSelectionChanged.connect(self.update_selected_tags)
 
     def load_dicom_file(self):
         options = QFileDialog.Options()
-        file_name, _ = QFileDialog.getOpenFileName(self, "Select DICOM File", "", "DICOM Files (*.dcm);;All Files (*)",
+        file_name, _ = QFileDialog.getOpenFileName(self, "Selecciona un archivo DICOM", "", "DICOM Files (*.dcm);;All Files (*)",
                                                    options=options)
         if file_name:
             self.read_dicom_tags(file_name)
@@ -60,11 +42,17 @@ class DICOMOrganizer(QWidget):
             if elem.VR != 'SQ':
                 row_position = self.dicom_table.rowCount()
                 self.dicom_table.insertRow(row_position)
-                self.dicom_table.setItem(row_position, 0, QTableWidgetItem(str(elem.tag)))
-                self.dicom_table.setItem(row_position, 1, QTableWidgetItem(elem.name))
-                self.dicom_table.setItem(row_position, 2, QTableWidgetItem(str(elem.value)))
+                tag_item = QTableWidgetItem(str(elem.tag))
+                tag_item.setFlags(tag_item.flags() & ~Qt.ItemIsEditable)
+                self.dicom_table.setItem(row_position, 0, tag_item)
 
-        self.dicom_table.itemSelectionChanged.connect(self.update_selected_tags)
+                name_item = QTableWidgetItem(elem.name)
+                name_item.setFlags(name_item.flags() & ~Qt.ItemIsEditable)
+                self.dicom_table.setItem(row_position, 1, name_item)
+
+                value_item = QTableWidgetItem(str(elem.value))
+                value_item.setFlags(value_item.flags() & ~Qt.ItemIsEditable)
+                self.dicom_table.setItem(row_position, 2, value_item)
 
     def update_selected_tags(self):
         self.selected_tags_list.clear()
@@ -75,30 +63,35 @@ class DICOMOrganizer(QWidget):
             tag_tuple = tuple(int(t, 16) for t in tag_str.strip("()").split(", "))
             tag_name = self.dicom_table.item(row.row(), 1).text()
             self.selected_tags.append((tag_tuple, tag_name))
-        self.selected_tags_list.addItems([f"{tag[1]} ({tag[0]})" for tag in self.selected_tags])
+        for tag in self.selected_tags:
+            item = QListWidgetItem(f"{tag[1]} ({tag[0]})")
+            self.selected_tags_list.addItem(item)
 
     def select_directory(self):
         options = QFileDialog.Options()
-        directory = QFileDialog.getExistingDirectory(self, "Select Directory", options=options)
+        directory = QFileDialog.getExistingDirectory(self, "Selecciona la ruta para ordenar los archivos", options=options)
         if directory:
             self.directory = directory
 
     def process_directory(self):
         if not hasattr(self, 'directory'):
-            QMessageBox.warning(self, 'Warning', 'Please select a directory first.')
+            QMessageBox.warning(self, 'Advertencia', 'Por favor, selecciona primero un directorio.')
             return
         if not self.selected_tags:
-            QMessageBox.warning(self, 'Warning', 'Please select at least one tag.')
+            QMessageBox.warning(self, 'Advertencia', 'Por favor, selecciona al menos un tag para ordenar.')
             return
 
         self.organize_dicom_files(self.directory)
-        QMessageBox.information(self, 'Success', 'Processing completed successfully!')
+        QMessageBox.information(self, '¡Éxito!', 'Los archivos se han ordenado.')
 
     def organize_dicom_files(self, directory):
         for subdir, _, files in os.walk(directory):
             for file in files:
                 file_path = os.path.join(subdir, file)
-                if not file.lower().endswith('.dcm'):
+                # if not file.lower().endswith('.dcm'):
+                #     #self.report_invalid_file(file_path, 'Invalid DICOM file')
+                #     continue
+                if not ReX.is_dicom_file(file_path):
                     self.report_invalid_file(file_path, 'Invalid DICOM file')
                     continue
 
@@ -120,7 +113,7 @@ class DICOMOrganizer(QWidget):
         for tag, name in self.selected_tags:
             element = ds.get(tag)
             if element is None:
-                print(f"Tag {tag} not found")
+                print(f"Tag {tag} no encontrado.")
                 return None
             try:
                 value = element.value
@@ -132,8 +125,8 @@ class DICOMOrganizer(QWidget):
         return os.path.join(self.directory, *dir_parts)
 
     def report_invalid_file(self, file_path, message):
-        print(f"Error with file {file_path}: {message}")
-        #QMessageBox.warning(self, 'Warning', f"Error with file {file_path}: {message}")
+        print(f"Error con el archivo {file_path}: {message}")
+        QMessageBox.warning(self, 'Warning', f"Error con el archivo {file_path}: {message}")
 
 
 if __name__ == '__main__':
