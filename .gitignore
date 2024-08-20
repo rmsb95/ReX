@@ -1,0 +1,9 @@
+.venv/
+build/
+dist/
+resources/ReX.ui
+resources/ReX_DQE.ui
+resources/ReXpath.ui
+hook-pydicom.py
+main.spec
+proyecto.zip
