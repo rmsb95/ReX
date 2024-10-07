@@ -7,6 +7,7 @@ import ReXfunc as ReX
 from ReXNNPS import calculateNNPS
 from ReXMTF import calculateMTF
 from ReXDQE import calculateDQE
+from ReXpath import DICOMOrganizer
 from PyQt5.QtWidgets import QApplication, QMainWindow, QFileDialog, QMessageBox, QDialog, QTableWidget, QTableWidgetItem, QVBoxLayout, QLabel
 from PyQt5.QtGui import QPixmap, QImage, QIcon
 from PyQt5.QtCore import Qt, QThread, pyqtSignal, QTimer
@@ -139,6 +140,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.Button_NPS.clicked.connect(self.execute_function_NPS)
         self.Button_MTF.clicked.connect(self.execute_function_MTF)
         self.Button_DQE.clicked.connect(self.open_dqe_window)
+        self.actionOrganizador_DICOM.triggered.connect(self.open_rexpath_window)
 
         # Inicialmente deshabilitar los botones de navegación
         self.prevButton.setEnabled(False)
@@ -156,6 +158,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def open_dqe_window(self):
         self.dqe_window.exec()
+
+    def open_rexpath_window(self):
+        self.rexpath_window = DICOMOrganizer()
+        self.rexpath_window.show()
 
     def log_message(self, message):
         self.logText.append(message)

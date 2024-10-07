@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'ReX2.ui'
+# Form implementation generated from reading ui file 'resources\ReX22.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.10
 #
@@ -17,7 +17,7 @@ class Ui_MainWindow(object):
         MainWindow.resize(842, 835)
         MainWindow.setMouseTracking(False)
         icon = QtGui.QIcon()
-        icon.addPixmap(QtGui.QPixmap("../../../../dinosauricon.ico"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        icon.addPixmap(QtGui.QPixmap("resources\\../dinosauricon.ico"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         MainWindow.setWindowIcon(icon)
         MainWindow.setUnifiedTitleAndToolBarOnMac(True)
         self.centralwidget = QtWidgets.QWidget(MainWindow)
@@ -259,10 +259,25 @@ class Ui_MainWindow(object):
         self.menubar = QtWidgets.QMenuBar(MainWindow)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 842, 26))
         self.menubar.setObjectName("menubar")
+        self.menuHerramientas = QtWidgets.QMenu(self.menubar)
+        self.menuHerramientas.setObjectName("menuHerramientas")
+        self.menuHelp = QtWidgets.QMenu(self.menubar)
+        self.menuHelp.setObjectName("menuHelp")
         MainWindow.setMenuBar(self.menubar)
         self.statusbar = QtWidgets.QStatusBar(MainWindow)
         self.statusbar.setObjectName("statusbar")
         MainWindow.setStatusBar(self.statusbar)
+        self.actionOrganizador_DICOM = QtWidgets.QAction(MainWindow)
+        self.actionOrganizador_DICOM.setObjectName("actionOrganizador_DICOM")
+        self.actionHelp = QtWidgets.QAction(MainWindow)
+        self.actionHelp.setObjectName("actionHelp")
+        self.actionAbout_us = QtWidgets.QAction(MainWindow)
+        self.actionAbout_us.setObjectName("actionAbout_us")
+        self.menuHerramientas.addAction(self.actionOrganizador_DICOM)
+        self.menuHelp.addAction(self.actionHelp)
+        self.menuHelp.addAction(self.actionAbout_us)
+        self.menubar.addAction(self.menuHerramientas.menuAction())
+        self.menubar.addAction(self.menuHelp.menuAction())
 
         self.retranslateUi(MainWindow)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
@@ -291,3 +306,8 @@ class Ui_MainWindow(object):
         self.functionsLabel.setText(_translate("MainWindow", "Funciones"))
         self.parametersLabel.setText(_translate("MainWindow", "Parámetros"))
         self.controlLabel.setText(_translate("MainWindow", "Control de imágenes"))
+        self.menuHerramientas.setTitle(_translate("MainWindow", "Herramientas"))
+        self.menuHelp.setTitle(_translate("MainWindow", "Help"))
+        self.actionOrganizador_DICOM.setText(_translate("MainWindow", "Organizador DICOM"))
+        self.actionHelp.setText(_translate("MainWindow", "Help"))
+        self.actionAbout_us.setText(_translate("MainWindow", "About ReX"))

@@ -4,16 +4,16 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="6b7920f4-a821-47d0-b518-dbff62dc9ca0" name="Changes" comment="README file">
-      <change afterPath="$PROJECT_DIR$/resources/HUVM-tagline-small.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/resources/HUVM-tagline.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Update_at_02_07_2024_18_19_[Changes]/shelved.patch" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Update_at_02_07_2024_18_19__Changes_.xml" beforeDir="false" />
+    <list default="true" id="6b7920f4-a821-47d0-b518-dbff62dc9ca0" name="Changes" comment="Archivo gitignore">
+      <change afterPath="$PROJECT_DIR$/hook-pydicom.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/ReX.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/ReX.iml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/MTF.py" beforeDir="false" afterPath="$PROJECT_DIR$/MTF.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/ReXMTF.py" beforeDir="false" afterPath="$PROJECT_DIR$/ReXMTF.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReXNNPS.py" beforeDir="false" afterPath="$PROJECT_DIR$/ReXNNPS.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ReXfunc.py" beforeDir="false" afterPath="$PROJECT_DIR$/ReXfunc.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/resources/ReX.ui" beforeDir="false" afterPath="$PROJECT_DIR$/resources/ReX.ui" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/resources/ReX2.ui" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/resources/main_window.py" beforeDir="false" afterPath="$PROJECT_DIR$/resources/main_window.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -54,25 +54,27 @@
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
     "Python.Jungle.executor": "Run",
-    "Python.MTF.executor": "Debug",
+    "Python.MTF.executor": "Run",
     "Python.NNPS.executor": "Run",
     "Python.ReXDQE.executor": "Run",
     "Python.ReXMTF.executor": "Run",
     "Python.ReXNNPS.executor": "Run",
     "Python.ReXfunc.executor": "Run",
+    "Python.ReXpath.executor": "Run",
+    "Python.ReXpath_2.executor": "Run",
     "Python.main.executor": "Run",
     "Python.mi_interfaz.executor": "Run",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "git-widget-placeholder": "main",
     "ignore.virus.scanning.warn.message": "true",
-    "last_opened_file_path": "C:/Users/rafa_/PycharmProjects/ReX/resources",
-    "settings.editor.selected.configurable": "com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable"
+    "last_opened_file_path": "C:/Users/rafa_/PycharmProjects/ReX",
+    "settings.editor.selected.configurable": "preferences.externalTools"
   }
 }]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
-      <recent name="C:\Users\rafa_\PycharmProjects\ReX\resources" />
       <recent name="C:\Users\rafa_\PycharmProjects\ReX" />
+      <recent name="C:\Users\rafa_\PycharmProjects\ReX\resources" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
       <recent name="C:\Users\rafa_\PycharmProjects\ReX\resources" />
@@ -106,7 +108,7 @@
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-python-sdk-0509580d9d50-746f403e7f0c-com.jetbrains.pycharm.community.sharedIndexes.bundled-PC-241.14494.241" />
+        <option value="bundled-python-sdk-975db3bf15a3-31b6be0877a2-com.jetbrains.pycharm.community.sharedIndexes.bundled-PC-241.18034.82" />
       </set>
     </attachedChunks>
   </component>
@@ -183,8 +185,59 @@
       <option name="project" value="LOCAL" />
       <updated>1720548412026</updated>
     </task>
-    <option name="localTasksCounter" value="9" />
+    <task id="LOCAL-00009" summary="Versión 2024.1">
+      <option name="closed" value="true" />
+      <created>1720649912816</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1720649912816</updated>
+    </task>
+    <task id="LOCAL-00010" summary="ReXpath - DICOM organizer tool version 0">
+      <option name="closed" value="true" />
+      <created>1721053813845</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1721053813845</updated>
+    </task>
+    <task id="LOCAL-00011" summary="ReXpath - DICOM organizer tool version 0.1">
+      <option name="closed" value="true" />
+      <created>1721055614486</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1721055614486</updated>
+    </task>
+    <task id="LOCAL-00012" summary="ReXpath - DICOM organizer tool version 1">
+      <option name="closed" value="true" />
+      <created>1721112739731</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1721112739731</updated>
+    </task>
+    <task id="LOCAL-00013" summary="Archivo gitignore">
+      <option name="closed" value="true" />
+      <created>1724158071424</created>
+      <option name="number" value="00013" />
+      <option name="presentableId" value="LOCAL-00013" />
+      <option name="project" value="LOCAL" />
+      <updated>1724158071424</updated>
+    </task>
+    <option name="localTasksCounter" value="14" />
     <servers />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="v 0.1 NNPS &amp; MTF work" />
@@ -194,7 +247,12 @@
     <MESSAGE value="Trying second commit of is_dicom_files" />
     <MESSAGE value="Requirements file and more." />
     <MESSAGE value="README file" />
-    <option name="LAST_COMMIT_MESSAGE" value="README file" />
+    <MESSAGE value="Versión 2024.1" />
+    <MESSAGE value="ReXpath - DICOM organizer tool version 0" />
+    <MESSAGE value="ReXpath - DICOM organizer tool version 0.1" />
+    <MESSAGE value="ReXpath - DICOM organizer tool version 1" />
+    <MESSAGE value="Archivo gitignore" />
+    <option name="LAST_COMMIT_MESSAGE" value="Archivo gitignore" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>

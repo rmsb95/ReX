@@ -278,54 +278,38 @@ def calculateMTF(path, conversion, a, b, exportFormat, progress_callback=None):
     # --------------------------
     # If MTF has been calculated for vertical and horizontal orientation
     # it creates a file with the values prepared to calculate DQE later
+
+    # Define target frequencies
+    print("Defining Target frequencies.")
+    target_frequencies = np.arange(0.5, fNyq + 0.5, 0.5)
+    target_frequencies = target_frequencies[target_frequencies <= fNyq]
+    print("Target frequencies defined.")
+
+    # Initialize results dictionary
+    results = {freq: {} for freq in target_frequencies}
+    print("Result dictionary initialized")
+
+    # Process each file in the directory
+    print("Bucle for")
+    for file_name in os.listdir(path):
+        print(file_name)
+        file_path = os.path.join(path, file_name)
+        if "MTF_vertical" in file_name:
+            print("MTF vertical")
+            data = ReX.process_file(file_path, target_frequencies, 'MTF', exportFormat)
+            for freq, value in data.items():
+                results[freq]['MTF Vertical'] = value
+        elif "MTF_horizontal" in file_name:
+            print("MTF horizontal")
+            data = ReX.process_file(file_path, target_frequencies, 'MTF', exportFormat)
+            for freq, value in data.items():
+                results[freq]['MTF Horizontal'] = value
+
+    # Create DataFrame from results
+    final_df = pd.DataFrame(results).T
+    final_df.index.name = 'Frequencies (1/mm)'
+
     if verticalFlag == 1 & horizontalFlag == 1:
-
-        # def process_file(file_path, target_frequencies):
-        #     """Process a file to find the closest MTF values for the target frequencies."""
-        #     try:
-        #         df = ReX.read_data(file_path,exportFormat)
-        #         df = df.dropna(axis=1, how='all')  # Delete useless columns
-        #
-        #         results = {}
-        #         for freq in target_frequencies:
-        #             closest_row = ReX.find_closest(df, freq, 'Frequencies (1/mm)')
-        #             results[freq] = closest_row['MTF']
-        #         return results
-        #
-        #     except Exception as e:
-        #         print(f"Error processing file {file_path}: {e}")
-        #         return None
-
-        # Define target frequencies
-        print("Defining Target frequencies.")
-        target_frequencies = np.arange(0.5, fNyq + 0.5, 0.5)
-        target_frequencies = target_frequencies[target_frequencies <= fNyq]
-        print("Target frequencies defined.")
-
-        # Initialize results dictionary
-        results = {freq: {} for freq in target_frequencies}
-        print("Result dictionary initialized")
-
-        # Process each file in the directory
-        print("Bucle for")
-        for file_name in os.listdir(path):
-            print(file_name)
-            file_path = os.path.join(path, file_name)
-            if "MTF_vertical" in file_name:
-                print("MTF vertical")
-                data = ReX.process_file(file_path, target_frequencies, 'MTF', exportFormat)
-                for freq, value in data.items():
-                    results[freq]['MTF Vertical'] = value
-            elif "MTF_horizontal" in file_name:
-                print("MTF horizontal")
-                data = ReX.process_file(file_path, target_frequencies, 'MTF', exportFormat)
-                for freq, value in data.items():
-                    results[freq]['MTF Horizontal'] = value
-
-        # Create DataFrame from results
-        final_df = pd.DataFrame(results).T
-        final_df.index.name = 'Frequencies (1/mm)'
-
         # Save final DataFrame
         if exportFormat == 'excel':
             output_file_path = os.path.join(path, 'MTF_to_DQE.xlsx')
@@ -336,13 +320,7 @@ def calculateMTF(path, conversion, a, b, exportFormat, progress_callback=None):
 
         print(f'Data saved as: {output_file_path}')
 
-        progress_callback(100)
-        progress_callback(0)
-        return final_df
-
-    else:
-        progress_callback(100)
-        progress_callback(0)
-        if (verticalFlag == 1 or horizontalFlag == 1):
-            return MTF_smoothed
+    progress_callback(100)
+    progress_callback(0)
+    return final_df
 

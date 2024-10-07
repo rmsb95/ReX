@@ -21,7 +21,7 @@ import ReXfunc as ReX
 # ---------------------
 # Section 1. Parameters
 # ---------------------
-path = 'C:/Users/rafa_/OneDrive/Residencia/01. R1/02. Radiodiagnóstico/Aplicaciones/Cálculo MTF/ImagenesMTF/SanJose/Mesa/V/'
+path = 'resources/Normal.dcm'
 files = glob.glob(os.path.join(path, '*.DCM'))
 
 # Export format (saved in path): 'excel' or 'csv'
