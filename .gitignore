@@ -1,6 +1,15 @@
+# Ignorar configuraciones locales
+.idea/
 .venv/
+
+# Ignorar ejecutable distribuible
 build/
 dist/
+
+# Ignorar archivos generados por python
+__pycache__/
+
+# Otros
 resources/ReX.ui
 resources/ReX_DQE.ui
 resources/ReXpath.ui
