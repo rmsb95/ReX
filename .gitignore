@@ -2,12 +2,14 @@
 .idea/
 .venv/
 
+
 # Ignorar ejecutable distribuible
 build/
 dist/
 
 # Ignorar archivos generados por python
 __pycache__/
+resources/__pycache__
 
 # Otros
 resources/ReX.ui
