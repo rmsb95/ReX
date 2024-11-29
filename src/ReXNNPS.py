@@ -15,7 +15,7 @@ import math
 import pandas as pd
 import numpy as np
 import numpy.fft as fft
-import ReXfunc as ReX
+import src.ReXfunc as ReX
 
 
 def calculateNNPS(path, conversion, a, b, exportFormat, progress_callback=None):

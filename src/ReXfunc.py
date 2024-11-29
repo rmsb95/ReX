@@ -1,8 +1,16 @@
+# ------------------------------------------------------ #
+#                 ReX auxiliar functions                 #
+# ------------------------------------------------------ #
+# Developer: Rafael Manuel Segovia Brome
+# Date: 05-2024
+# Version: 1.0
+
 import os
 import numpy as np
 import pandas as pd
 import math
 import pydicom
+import sys
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon, QKeySequence
 from PyQt5.QtWidgets import QDialog, QVBoxLayout, QTableWidget, QTableWidgetItem, QApplication, QAction
@@ -12,6 +20,19 @@ from skimage import data, filters
 from sklearn.decomposition import PCA
 from scipy.interpolate import CubicSpline
 
+
+
+def resource_path(relative_path):
+    # Si está empaquetado, usar sys._MEIPASS
+    if hasattr(sys, '_MEIPASS'):
+        base_path = sys._MEIPASS
+    else:
+        # Ruta relativa desde el directorio raíz (no src/)
+        base_path = os.path.abspath(os.path.dirname(__file__) + '/../')
+    return os.path.join(base_path, relative_path)
+
+
+dino_icon_path = resource_path("resources/dinosauricon.ico")
 
 def cropImage(image, roiSizeX, roiSizeY, delta_x, delta_y, despCenterX, despCenterY):
     """
@@ -347,7 +368,7 @@ def show_results_table_and_graph(results, title):
         def __init__(self, results, title, parent=None):
             super().__init__(parent)
             self.setWindowTitle(title)
-            self.setWindowIcon(QIcon('resources/dinosauricon.ico'))
+            self.setWindowIcon(QIcon(dino_icon_path))
             self.setWindowFlags(self.windowFlags() & ~Qt.WindowContextHelpButtonHint)  # Eliminar el icono de ayuda
             self.resize(425, 450)
 

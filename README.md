@@ -53,9 +53,9 @@ To run the application, execute the following command: python main.py
 
 
 ## 4. Version control
-### Version 1.1
+### Version 1.0.0
 Main changes:
-- MTF & NNPS values used to calculate DQE are obtained through a 3 degree polynomial fit to the data.
+- MTF & NNPS values used to calculate DQE are obtained through a cubic spline fit to the data.
 
 ## 5. Contact
-For any questions or issues, please contact the developer at [].
+For any questions or issues, please contact the developer at rmsb95@gmail.com [Issue: ReX].

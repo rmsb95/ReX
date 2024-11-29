@@ -3,16 +3,21 @@ import os
 import pydicom
 import numpy as np
 import matplotlib.pyplot as plt
-import ReXfunc as ReX
-from ReXNNPS import calculateNNPS
-from ReXMTF import calculateMTF
-from ReXDQE import calculateDQE
-from ReXpath import DICOMOrganizer
+import src.ReXfunc as ReX
+from src.ReXNNPS import calculateNNPS
+from src.ReXMTF import calculateMTF
+from src.ReXDQE import calculateDQE
+from src.ReXpath import DICOMOrganizer
 from PyQt5.QtWidgets import QApplication, QMainWindow, QFileDialog, QMessageBox, QDialog, QTableWidget, QTableWidgetItem, QVBoxLayout, QLabel
 from PyQt5.QtGui import QPixmap, QImage, QIcon
 from PyQt5.QtCore import Qt, QThread, pyqtSignal, QTimer
-from resources.main_window import Ui_MainWindow
-from resources.dqe_window import Ui_Dialog as Form
+from src.UI.main_window import Ui_MainWindow
+from src.UI.dqe_window import Ui_Dialog as Form
+
+
+# Rutas de iconos
+dino_icon_path = ReX.resource_path("resources/dinosauricon.ico")
+tagline_path = ReX.resource_path('resources/HUVM-tagline.png')
 
 class Worker(QThread):
     progress = pyqtSignal(int)
@@ -126,7 +131,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.worker = None
         self.setupUi(self)
 
-        self.setWindowIcon(QIcon('resources/dinosauricon.ico'))
+        self.setWindowIcon(QIcon(dino_icon_path))
 
         # Lista de archivos de imagen DICOM
         self.image_files = []
@@ -399,7 +404,7 @@ class SplashScreen(QDialog):
 
         # Espacio para la imagen
         image_label = QLabel()
-        pixmap = QPixmap('resources/HUVM-tagline.png')
+        pixmap = QPixmap(tagline_path)
         image_label.setPixmap(pixmap)
         image_label.setAlignment(Qt.AlignBottom | Qt.AlignHCenter)
         layout.addWidget(image_label)

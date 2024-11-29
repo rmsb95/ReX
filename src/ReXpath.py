@@ -1,19 +1,31 @@
+# ------------------------------------------------------ #
+#                 DICOM Manager System                   #
+# ------------------------------------------------------ #
+# Developer: Rafael Manuel Segovia Brome
+# Date: 06-2024
+# Version: 1.0
+
 import sys
 import os
 import pydicom
 import shutil
-import ReXfunc as ReX
+
+import src.ReXfunc as ReX
 from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QApplication, QMainWindow, QFileDialog, QTableWidgetItem, QMessageBox, QListWidgetItem
 
 # Cargar la interfaz gráfica generada por PyQt Designer
-from resources.rexpath_window import Ui_Dialog
+from src.UI.rexpath_window import Ui_Dialog
 
+dino_icon_path = ReX.resource_path("resources/dinosauricon.ico")
+tagline_path = ReX.resource_path('resources/HUVM-tagline.png')
 
 class DICOMOrganizer(QMainWindow, Ui_Dialog):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
+        self.setWindowIcon(QIcon(dino_icon_path))
         self.selected_tags = []
 
         # Conectar los botones a sus respectivas funciones

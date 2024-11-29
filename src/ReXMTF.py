@@ -14,7 +14,7 @@ import pydicom
 import math
 import numpy as np
 import pandas as pd
-import ReXfunc as ReX
+import src.ReXfunc as ReX
 
 def calculateMTF(path, conversion, a, b, exportFormat, progress_callback=None):
 
