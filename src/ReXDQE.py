@@ -9,6 +9,7 @@
 # Section 0. Imports
 # ---------------------
 import os
+import openpyxl
 import pandas as pd
 
 def calculateDQE(nnps_file, mtf_file, beamQuality, kermaAir):

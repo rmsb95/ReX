@@ -9,6 +9,7 @@
 # Section 0. Imports
 # ---------------------
 import os
+import openpyxl
 import glob
 import pydicom
 import math

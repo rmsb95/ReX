@@ -66,17 +66,36 @@ class DICOMOrganizer(QMainWindow, Ui_Dialog):
                 value_item.setFlags(value_item.flags() & ~Qt.ItemIsEditable)
                 self.dicom_table.setItem(row_position, 2, value_item)
 
+    # def update_selected_tags(self):
+    #     self.selected_tags_list.clear()
+    #     self.selected_tags = []
+    #     selected_rows = self.dicom_table.selectionModel().selectedRows()
+    #     for row in selected_rows:
+    #         tag_str = self.dicom_table.item(row.row(), 0).text()
+    #         tag_tuple = tuple(int(t, 16) for t in tag_str.strip("()").split(", "))
+    #         tag_name = self.dicom_table.item(row.row(), 1).text()
+    #         self.selected_tags.append((tag_tuple, tag_name))
+    #     for tag in self.selected_tags:
+    #         item = QListWidgetItem(f"{tag[1]} ({tag[0]})")
+    #         self.selected_tags_list.addItem(item)
+
     def update_selected_tags(self):
         self.selected_tags_list.clear()
         self.selected_tags = []
         selected_rows = self.dicom_table.selectionModel().selectedRows()
         for row in selected_rows:
             tag_str = self.dicom_table.item(row.row(), 0).text()
-            tag_tuple = tuple(int(t, 16) for t in tag_str.strip("()").split(", "))
+            group, element = tag_str.strip("()").split(",")
+            # Mantener los valores originales como enteros
+            group_val = int(group.strip(), 16)
+            element_val = int(element.strip(), 16)
+            tag_tuple = (group_val, element_val)
             tag_name = self.dicom_table.item(row.row(), 1).text()
             self.selected_tags.append((tag_tuple, tag_name))
-        for tag in self.selected_tags:
-            item = QListWidgetItem(f"{tag[1]} ({tag[0]})")
+        for tag, name in self.selected_tags:
+            # Formatear cada número hexadecimal por separado
+            formatted_tag = f"({tag[0]:04x},{tag[1]:04x})"
+            item = QListWidgetItem(f"{name} {formatted_tag}")
             self.selected_tags_list.addItem(item)
 
     def select_directory(self):

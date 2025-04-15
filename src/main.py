@@ -1,5 +1,6 @@
 import sys
 import os
+import openpyxl
 import pydicom
 import numpy as np
 import matplotlib.pyplot as plt
@@ -21,7 +22,7 @@ tagline_path = ReX.resource_path('resources/HUVM-tagline.png')
 
 class Worker(QThread):
     progress = pyqtSignal(int)
-    finished = pyqtSignal()
+    finished = pyqtSignal(bool)
     error = pyqtSignal(str)
     log_signal = pyqtSignal(str)
 
@@ -33,6 +34,7 @@ class Worker(QThread):
         self.a = a
         self.b = b
         self.exportFormat = exportFormat
+        self.success = False
 
     def run(self):
         try:
@@ -44,11 +46,17 @@ class Worker(QThread):
                 self.log_signal.emit(">> Cálculo de MTF iniciado.")
                 self.results = calculateMTF(self.path, self.functionType, self.a, self.b, self.exportFormat, self.progress.emit)
 
+            # Una ejecución correcta implica:
+            self.success = True
+
         except Exception as e:
             self.error.emit(str(e))
 
+            # Una ejecución incorrecta implica:
+            self.success = False
+
         finally:
-            self.finished.emit()
+            self.finished.emit(self.success)
 
 class DQEWindow(QDialog, Form):
     log_signal = pyqtSignal(str)
@@ -146,6 +154,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.Button_MTF.clicked.connect(self.execute_function_MTF)
         self.Button_DQE.clicked.connect(self.open_dqe_window)
         self.actionOrganizador_DICOM.triggered.connect(self.open_rexpath_window)
+        self.actionHelp.triggered.connect(self.show_help)
+        self.actionAbout_us.triggered.connect(self.show_about)
+
 
         # Inicialmente deshabilitar los botones de navegación
         self.prevButton.setEnabled(False)
@@ -168,6 +179,59 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.rexpath_window = DICOMOrganizer()
         self.rexpath_window.show()
 
+    def show_help(self):
+        help_text = """
+        Manual de Usuario - ReX
+
+        1. Carga de Imágenes:
+           - Haga clic en 'Examinar' para seleccionar un directorio con imágenes DICOM
+           - Use los botones de navegación para ver las imágenes
+
+        2. Cálculo de NNPS:
+           - Ajuste los parámetros a y b
+           - Seleccione el tipo de función (lineal/logarítmica)
+           - Elija el formato de exportación
+           - Haga clic en 'Calcular NNPS'
+
+        3. Cálculo de MTF:
+           - Siga los mismos pasos que para NNPS
+           - Haga clic en 'Calcular MTF'
+
+        4. Cálculo de DQE:
+           - Seleccione archivos NNPS y MTF previos
+           - Elija la calidad del haz
+           - Introduzca el valor de kerma
+           - Haga clic en 'Calcular DQE'
+        """
+
+        msg = QMessageBox(self)
+        msg.setWindowTitle("Ayuda de ReX")
+        msg.setText(help_text)
+        msg.setIcon(QMessageBox.Information)
+        msg.exec_()
+
+    def show_about(self):
+        about_text = """
+        ReX - Herramienta de Análisis de Calidad de Imagen
+
+        Versión: 2024.1
+        Desarrolladores: 
+        - Rafael Manuel Segovia Brome (@rmsb95)
+        - Antonio Ortiz Lora (@aol)
+
+        Hospital Universitario Virgen Macarena
+        Servicio de Radiofísica
+        Sevilla, España
+
+        © 2024 Todos los derechos reservados
+        """
+
+        msg = QMessageBox(self)
+        msg.setWindowTitle("Acerca de ReX")
+        msg.setText(about_text)
+        msg.setIcon(QMessageBox.Information)
+        msg.exec_()
+
     def log_message(self, message):
         self.logText.append(message)
 
@@ -186,7 +250,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                     # Asegurarse de que el archivo tiene un pixel_array válido
                     if hasattr(dicom_image, 'pixel_array'):
                         self.image_files.append(file_path)
-                        print(f"Archivo DICOM válido {file_path}")
                         self.logText.append(f"Archivo DICOM válido: {file_path}")
                 except Exception as e:
                     print(f"Archivo no válido {file_path}: {e}")
@@ -306,7 +369,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def update_progress(self, value):
         self.progressBar.setValue(value)
 
-    def on_finished(self):
+    def on_finished(self, success):
         # Restaurar el cursor a normal
         QApplication.restoreOverrideCursor()
 
@@ -314,11 +377,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.Button_NPS.setEnabled(True)
         self.Button_MTF.setEnabled(True)
         self.Button_DQE.setEnabled(True)
-        QMessageBox.information(self, "Completado", "El cálculo ha finalizado correctamente.")
 
-        # Mostrar resultados en tabla y gráfica
-        if hasattr(self.worker, 'results'):
-            ReX.show_results_table_and_graph(self.worker.results, f"Resultados de {self.worker.taskType}")
+        if success:
+            QMessageBox.information(self, "Completado", "El cálculo ha finalizado correctamente.")
+            # Mostrar resultados en tabla y gráfica
+            if hasattr(self.worker, 'results'):
+                ReX.show_results_table_and_graph(self.worker.results, f"Resultados de {self.worker.taskType}")
 
 
     def show_error(self, error_message):
