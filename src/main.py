@@ -1,3 +1,10 @@
+# ------------------------------------------------------ #
+#                           REX                          #
+# ------------------------------------------------------ #
+# Developer: Rafael Manuel Segovia Brome
+# Date: 04-2025
+# Version: 1.0.1
+
 import sys
 import os
 import openpyxl
@@ -184,24 +191,37 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         Manual de Usuario - ReX
 
         1. Carga de Imágenes:
-           - Haga clic en 'Examinar' para seleccionar un directorio con imágenes DICOM
-           - Use los botones de navegación para ver las imágenes
+           - Haga clic en 'Examinar' para seleccionar un directorio con imágenes DICOM.
+             
+             > Requisitos para cálculo de MTF:
+             - Debe haber como mucho dos imágenes DICOM en el directorio para el cálculo de MTF,
+               y ninguna imagen de otro tipo.
+             - Si hay una imagen, puede ser en vertical o en horizontal.
+             - Si hay dos imágenes, una debe ser en vertical y la otra en horizontal.
+             - Para el posterior cálculo de la DQE, debe haber dos imágenes.
+             
+             > Requisitos para cálculo de NPS y NNPS:
+             - Debe haber al menos una imagen DICOM en el directorio para el cálculo de NPS,
+               y ninguna imagen de otro tipo.               
+               
+           - Use los botones de navegación para ver las imágenes y comprobar los requisitos.
 
-        2. Cálculo de NNPS:
-           - Ajuste los parámetros a y b
-           - Seleccione el tipo de función (lineal/logarítmica)
-           - Elija el formato de exportación
-           - Haga clic en 'Calcular NNPS'
+        2. Cálculo de NPS y NNPS:
+           - Seleccione el tipo de función (lineal/logarítmica).
+           - Ajuste los parámetros a y b.
+           - Elija el formato de exportación: csv o excel.
+           - Haga clic en 'Calcular NNPS'.
 
         3. Cálculo de MTF:
-           - Siga los mismos pasos que para NNPS
-           - Haga clic en 'Calcular MTF'
+           - Siga los mismos pasos que para NNPS. Recuerde seleccionar el directorio adecuado.
+           - Haga clic en 'Calcular MTF'.
 
         4. Cálculo de DQE:
-           - Seleccione archivos NNPS y MTF previos
-           - Elija la calidad del haz
-           - Introduzca el valor de kerma
-           - Haga clic en 'Calcular DQE'
+           - Es necesario haber calculado antes la MTF y el NNPS.
+           - Seleccione archivos NNPS_to_DQE y MTF_to_DQE generados en los cálculos previos. 
+           - Elija la calidad del haz.
+           - Introduzca el valor de kerma.
+           - Haga clic en 'Calcular DQE'.
         """
 
         msg = QMessageBox(self)
@@ -214,7 +234,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         about_text = """
         ReX - Herramienta de Análisis de Calidad de Imagen
 
-        Versión: 2024.1
+        Versión: 2025.1
         Desarrolladores: 
         - Rafael Manuel Segovia Brome (@rmsb95)
         - Antonio Ortiz Lora (@aol)
@@ -223,7 +243,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         Servicio de Radiofísica
         Sevilla, España
 
-        © 2024 Todos los derechos reservados
+        © 2025
         """
 
         msg = QMessageBox(self)
