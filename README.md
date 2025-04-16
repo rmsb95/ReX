@@ -53,6 +53,10 @@ To run the application, execute the following command: python main.py
 
 
 ## 4. Version control
+### Version 1.0.1
+Bug corrections:
+- Added openpyxl import to every ReX file.
+
 ### Version 1.0.0
 Main changes:
 - MTF & NNPS values used to calculate DQE are obtained through a cubic spline fit to the data.
