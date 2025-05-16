@@ -3,7 +3,7 @@
 # ------------------------------------------------------ #
 # Developer: Rafael Manuel Segovia Brome
 # Date: 05-2024
-# Version: 1.0
+# Version: 1.0.1 - 2025/05/16
 #
 # ---------------------
 # Section 0. Imports
@@ -74,9 +74,11 @@ def calculateMTF(path, conversion, a, b, exportFormat, progress_callback=None):
         # Linearize data (from Mean Pixel Value to Dose)
         if conversion == 'linear':
             doseImage = (dicomImage.astype(float) - b) / a
+            print("Se ha aplicado FR lineal")
 
         elif conversion == 'log':
             doseImage = np.exp((dicomImage.astype(float) - b) / a)
+            print("Se ha aplicado FR log")
 
         # Substitute negative values -> zeros
         doseImage[doseImage < 0] = 0
@@ -112,6 +114,9 @@ def calculateMTF(path, conversion, a, b, exportFormat, progress_callback=None):
         # Function to calculate angle and orientation
         angle, orientation = ReX.edgeDetection(croppedROI)
 
+        print(f'Angle: {angle}')
+        print(f'Orientation: {orientation}')
+
         absAngle = abs(angle)
 
         # Adjust image to horizontal orientation for next steps
@@ -122,9 +127,12 @@ def calculateMTF(path, conversion, a, b, exportFormat, progress_callback=None):
 
             verticalFlag = 1
 
-            NAngle = abs(90 - absAngle)
             croppedROI, _, _ = ReX.cropImage(corrImage, roiSizeA, roiSizeB, pixelSpacing, pixelSpacing, offsetCenterX,
                                              offsetCenterY)
+
+            # Angle is recalculated after cropping
+            angle_after_new_cropping, _ = ReX.edgeDetection(croppedROI)
+            NAngle = abs(90 - abs(angle_after_new_cropping))
 
             if absAngle > 90:
                 croppedROI = np.rot90(croppedROI)
@@ -310,7 +318,7 @@ def calculateMTF(path, conversion, a, b, exportFormat, progress_callback=None):
     final_df = pd.DataFrame(results).T
     final_df.index.name = 'Frequencies (1/mm)'
 
-    if verticalFlag == 1 & horizontalFlag == 1:
+    if verticalFlag == 1 and horizontalFlag == 1:
         # Save final DataFrame
         if exportFormat == 'excel':
             output_file_path = os.path.join(path, 'MTF_to_DQE.xlsx')

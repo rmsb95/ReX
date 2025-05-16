@@ -54,7 +54,7 @@ def cropImage(image, roiSizeX, roiSizeY, delta_x, delta_y, despCenterX, despCent
     cropHeight = round(roiSizeY / delta_y)
 
     # Calcular el centro de la imagen
-    height, width = image.shape[:2]              # COMPROBAR QUE ESTO FUNCIONA
+    height, width = image.shape[:2]
     centerX = round(width / 2) + despCenterX
     centerY = round(height / 2) + despCenterY
 

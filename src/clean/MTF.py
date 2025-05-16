@@ -15,13 +15,14 @@ import math
 import numpy as np
 import numpy.fft as fft
 import matplotlib.pyplot as plt
-import ReXfunc
-import ReXfunc as ReX
+from src import ReXfunc as ReX
+#import ReXfunc as ReX
 
 # ---------------------
 # Section 1. Parameters
 # ---------------------
-path = 'resources/Normal.dcm'
+# path = 'resources/Normal.dcm'
+path = r'C:\Users\SegoviaRafaelM62F\Desktop\Prueba_MTF'
 files = glob.glob(os.path.join(path, '*.DCM'))
 
 # Export format (saved in path): 'excel' or 'csv'
@@ -101,7 +102,7 @@ for file in files:
         # Apply non-uniformity correction
         # Calculation of 2D best fit (S)
         # Corrected image = Original Image / S * S_avg
-        corrImage = ReXfunc.correctedImage(croppedImage)
+        corrImage = ReX.correctedImage(croppedImage)
 
     elif isNeeded == 0:
         # Not needed
@@ -113,11 +114,11 @@ for file in files:
     # Crop 100 mm x 50 mm central ROI for MTF
     croppedROI, _, _ = ReX.cropImage(corrImage, roiSizeB, roiSizeA, pixelSpacing, pixelSpacing, offsetCenterX, offsetCenterY)
 
-    # plt.figure()  # Creates a new figure window
-    # plt.imshow(croppedROI, cmap='gray')  # Display the original image
-    # plt.colorbar()  # Display a color bar
-    # plt.title('MTF ROI')  # Title of the figure
-    # plt.show()
+    plt.figure()  # Creates a new figure window
+    plt.imshow(croppedROI, cmap='gray')  # Display the original image
+    plt.colorbar()  # Display a color bar
+    plt.title('MTF ROI')  # Title of the figure
+    plt.show()
 
 
     # -------------------------
