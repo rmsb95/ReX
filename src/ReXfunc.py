@@ -189,7 +189,7 @@ def edgeDetection(image):
 
     # Threshold the edge-detected image to obtain a binary matrix
     # This value may require adjustment
-    threshold = 0.5
+    threshold = 0.5*edges.max()  # editado por AOL, dato original era 0.5 como valor fijo
     edgeMatrix = (edges > threshold).astype(int)
 
     # plt.figure()  # Creates a new figure window

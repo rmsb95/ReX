@@ -250,7 +250,8 @@ def calculateNNPS(path, conversion, a, b, exportFormat, progress_callback=None):
     fNyq = 1 / (2 * pixelSpacing)
 
     # Create target frequencies array
-    target_frequencies = np.arange(0.5, fNyq + 0.5, 0.5)
+    sample_step = 0.1  # Frequency step (1/mm) añadido por AOL
+    target_frequencies = np.arange(sample_step, fNyq + sample_step, sample_step)
     target_frequencies = target_frequencies[target_frequencies <= fNyq]
 
     # Read data

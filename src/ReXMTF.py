@@ -145,6 +145,7 @@ def calculateMTF(path, conversion, a, b, exportFormat, progress_callback=None):
 
             NAngle = absAngle
 
+
         if angle > 0:
             croppedROI = np.fliplr(croppedROI)
 
@@ -290,7 +291,8 @@ def calculateMTF(path, conversion, a, b, exportFormat, progress_callback=None):
 
     # Define target frequencies
     print("Defining Target frequencies.")
-    target_frequencies = np.arange(0.5, fNyq + 0.5, 0.5)
+    sample_step = 0.1               # Frequency step (1/mm) añadido por AOL
+    target_frequencies = np.arange(sample_step, fNyq + sample_step, sample_step)
     target_frequencies = target_frequencies[target_frequencies <= fNyq]
     print("Target frequencies defined.")
 
