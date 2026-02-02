@@ -359,8 +359,16 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 painter.drawRect(x, y, w, h)
                 painter.end()
 
-            self.imageLabel.setPixmap(pixmap)
-            self.imageLabel.setScaledContents(True)
+            # Obtener el tamaño del QLabel
+            label_size = self.imageLabel.size()
+
+            # Escalar el pixmap manteniendo la relación de aspecto
+            scaled_pixmap = pixmap.scaled( label_size, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+
+            # Mostrar el pixmap escalado (se centrará automáticamente con la alineación)
+            self.imageLabel.setPixmap(scaled_pixmap)
+            self.imageLabel.setScaledContents(False)  # Importante: desactivar para mantener proporción
+            self.imageLabel.setAlignment(Qt.AlignCenter)  # Centrar la imagen en el label
 
             # Actualizar el nombre de la imagen
             self.imageNameLabel.setText(os.path.basename(self.image_files[index]))
