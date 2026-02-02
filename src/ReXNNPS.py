@@ -20,6 +20,7 @@ import src.ReXfunc as ReX
 
 
 def calculateNNPS(path, conversion, a, b, exportFormat, progress_callback=None):
+    rois = {}
     # ---------------------
     # Section 1. Parameters
     # ---------------------
@@ -74,9 +75,12 @@ def calculateNNPS(path, conversion, a, b, exportFormat, progress_callback=None):
             doseImage = np.exp((dicomImage.astype(float) - b) / a)
 
         # Crop 125x125 mm^2 centered ROI
-        croppedImage, cropHeight, cropWidth, _, _ = ReX.cropImage(doseImage, cropSize, cropSize, pixelSpacing, pixelSpacing,
+        croppedImage, cropHeight, cropWidth, startX, startY = ReX.cropImage(doseImage, cropSize, cropSize, pixelSpacing, pixelSpacing,
                                                             offsetCenterX, offsetCenterY)
         croppedImageArray = np.array(croppedImage)
+
+        rois[file] = (startY, startX, cropWidth, cropHeight)
+        print(f"x: {startY}, y: {startX}")
 
         # Initialize dose array
         if i == 0:
@@ -99,9 +103,10 @@ def calculateNNPS(path, conversion, a, b, exportFormat, progress_callback=None):
                     offsetCenterY = int(input("Enter a new value (in pixels) for offsetCenterY: "))
 
                     # Recalculate
-                    croppedImage, _, _, _, _ = ReX.cropImage(doseImage, cropSize, cropSize, pixelSpacing, pixelSpacing,
+                    croppedImage, _, _, startX, startY = ReX.cropImage(doseImage, cropSize, cropSize, pixelSpacing, pixelSpacing,
                                                        offsetCenterX,
                                                        offsetCenterY)
+                    rois[file] = (startX, startY, cropWidth, cropHeight)
 
                     # Evaluate again
                     areThereLowerPixels = ReX.evaluateCentering(croppedImage, dose[i])
@@ -297,4 +302,4 @@ def calculateNNPS(path, conversion, a, b, exportFormat, progress_callback=None):
         output_file_path = os.path.join(path, 'NNPS_to_DQE.csv')
         NNPS_to_DQE.to_csv(output_file_path)
 
-    return NNPS_to_DQE
+    return {'dataframe': NNPS_to_DQE, 'rois': rois}

@@ -418,7 +418,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             # Mostrar resultados en tabla y gráfica
             if hasattr(self.worker, 'results'):
                 results = self.worker.results
-                if self.worker.taskType == 'MTF':
+                if self.worker.taskType == 'MTF' or self.worker.taskType == 'NNPS':
                     self.rois = results.get('rois', {})
                     ReX.show_results_table_and_graph(results.get('dataframe'), f"Resultados de {self.worker.taskType}")
                     # Refresh current image to show ROI
