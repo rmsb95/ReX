@@ -3,7 +3,8 @@
 # ------------------------------------------------------ #
 # Developer: Rafael Manuel Segovia Brome
 # Date: 05-2024
-# Version: 1.0.1 - 2025/05/16
+# Version: 1.0.2 - 2025/06
+# Modified: roiSizeA and roiSizeB are now parameters
 #
 # ---------------------
 # Section 0. Imports
@@ -17,7 +18,35 @@ import numpy as np
 import pandas as pd
 import src.ReXfunc as ReX
 
-def calculateMTF(path, conversion, a, b, exportFormat, progress_callback=None):
+
+def calculateMTF(path, conversion, a, b, exportFormat, progress_callback=None, roiSizeA=100, roiSizeB=50):
+    """
+    Calculate the Modulation Transfer Function (MTF).
+
+    Parameters:
+    -----------
+    path : str
+        Path to the directory containing DICOM files.
+    conversion : str
+        Type of conversion function ('linear' or 'log').
+    a : float
+        Coefficient 'a' of the response function.
+    b : float
+        Coefficient 'b' of the response function.
+    exportFormat : str
+        Export format ('excel' or 'csv').
+    progress_callback : callable, optional
+        Callback function to report progress.
+    roiSizeA : int, optional
+        ROI width in mm (default: 100 mm per IEC 62220-1-1:2015).
+    roiSizeB : int, optional
+        ROI height in mm (default: 50 mm per IEC 62220-1-1:2015).
+
+    Returns:
+    --------
+    dict
+        Dictionary containing 'dataframe' with MTF results and 'rois' with ROI positions.
+    """
     rois = {}
 
     # ---------------------
@@ -30,13 +59,14 @@ def calculateMTF(path, conversion, a, b, exportFormat, progress_callback=None):
     horizontalFlag = 0
 
     # ROI size (mm) (IEC 62220-1-1:2015) considering vertical position of the edge
-    roiSizeA = 100  # width
-    roiSizeB = 50   # height
+    # Now these are parameters with default IEC values
+    # roiSizeA = 100  # width (now parameter)
+    # roiSizeB = 50   # height (now parameter)
 
     # ROI size (mm) for non-uniformity correction (IEC 62220-1-1:2015)
     # It should be at least 1.5 times bigger than the other one
-    roiSizeAUC = 150
-    roiSizeBUC = 150
+    roiSizeAUC = int(max(roiSizeA, roiSizeB) * 1.5)
+    roiSizeBUC = int(max(roiSizeA, roiSizeB) * 1.5)
 
     # Offset (px) from center to trim ROI
     offsetCenterX = 0
@@ -88,8 +118,9 @@ def calculateMTF(path, conversion, a, b, exportFormat, progress_callback=None):
         # Section 2*. Non-uniformity correction
         # -------------------------------------
         # Crop the ROI for the correction
-        croppedImage, _, _, crop_start_row, crop_start_col = ReX.cropImage(doseImage, roiSizeBUC, roiSizeAUC, pixelSpacing, pixelSpacing,
-                                                            offsetCenterX, offsetCenterY)
+        croppedImage, _, _, crop_start_row, crop_start_col = ReX.cropImage(doseImage, roiSizeBUC, roiSizeAUC,
+                                                                           pixelSpacing, pixelSpacing,
+                                                                           offsetCenterX, offsetCenterY)
 
         if isNeeded == 1:
             # Apply non-uniformity correction
@@ -101,12 +132,12 @@ def calculateMTF(path, conversion, a, b, exportFormat, progress_callback=None):
             # Not needed
             corrImage = croppedImage
 
-
         # -------------------
         # Section 3. MTF ROI
         # -------------------
-        # Crop 100 mm x 50 mm central ROI for MTF
-        croppedROI, _, _, roi_start_row, roi_start_col = ReX.cropImage(corrImage, roiSizeB, roiSizeA, pixelSpacing, pixelSpacing, offsetCenterX, offsetCenterY)
+        # Crop roiSizeA x roiSizeB central ROI for MTF
+        croppedROI, _, _, roi_start_row, roi_start_col = ReX.cropImage(corrImage, roiSizeB, roiSizeA, pixelSpacing,
+                                                                       pixelSpacing, offsetCenterX, offsetCenterY)
         roi_height, roi_width = croppedROI.shape
 
         # -------------------------
@@ -128,8 +159,9 @@ def calculateMTF(path, conversion, a, b, exportFormat, progress_callback=None):
 
             verticalFlag = 1
 
-            croppedROI, _, _, roi_start_row, roi_start_col = ReX.cropImage(corrImage, roiSizeA, roiSizeB, pixelSpacing, pixelSpacing, offsetCenterX,
-                                             offsetCenterY)
+            croppedROI, _, _, roi_start_row, roi_start_col = ReX.cropImage(corrImage, roiSizeA, roiSizeB, pixelSpacing,
+                                                                           pixelSpacing, offsetCenterX,
+                                                                           offsetCenterY)
             roi_height, roi_width = croppedROI.shape
 
             # Angle is recalculated after cropping
@@ -146,7 +178,6 @@ def calculateMTF(path, conversion, a, b, exportFormat, progress_callback=None):
             horizontalFlag = 1
 
             NAngle = absAngle
-
 
         if angle > 0:
             croppedROI = np.fliplr(croppedROI)
@@ -175,7 +206,7 @@ def calculateMTF(path, conversion, a, b, exportFormat, progress_callback=None):
         for k in range(1, numGroups + 1):
             # Calculate first index for each group of N columns
             startCol = (k - 1) * N  # Esto queda modificado respecto a MATLAB
-            endCol = startCol + N   # Esto queda modificado respecto a MATLAB
+            endCol = startCol + N  # Esto queda modificado respecto a MATLAB
 
             # Get region for current group
             edgeRegion = croppedROI[:, startCol:endCol]
@@ -203,7 +234,7 @@ def calculateMTF(path, conversion, a, b, exportFormat, progress_callback=None):
         average_ESF = np.mean(all_ESFs, axis=1)
 
         # Slice the ESF to avoid unuseful values due to displacement (not IEC)
-        start = 499     # Max(N * k) = 500 -> 500 - 1 (python index) = 499
+        start = 499  # Max(N * k) = 500 -> 500 - 1 (python index) = 499
         average_ESF = average_ESF[start:]
 
         for n in range(61, 70, 1):
@@ -218,18 +249,17 @@ def calculateMTF(path, conversion, a, b, exportFormat, progress_callback=None):
         # Convolution
         LSF = np.convolve(average_ESF, kernel, mode='valid')
 
-
         # ---------------------------------------------
         # Section 7. Modulation Transfer Function (MTF)
         # ---------------------------------------------
         # Calculate Nyquist frequency
-        fNyq = 1/(2*pixelSpacing)
+        fNyq = 1 / (2 * pixelSpacing)
 
         # Calculate the FFT from LSF
         MTF = np.abs(np.fft.fft(LSF))
 
         # Take the positive half
-        MTF = MTF[:len(MTF)//2]
+        MTF = MTF[:len(MTF) // 2]
 
         # Normalize MTF
         MTF = MTF / MTF[0]
@@ -245,7 +275,7 @@ def calculateMTF(path, conversion, a, b, exportFormat, progress_callback=None):
 
         # Take the positive half
         frequencies = np.fft.fftshift(frequencies)
-        frequencies = frequencies[:len(frequencies)//2]
+        frequencies = frequencies[:len(frequencies) // 2]
 
         # ------------------------------
         # Section 7.b. Smoothing the MTF
@@ -285,7 +315,8 @@ def calculateMTF(path, conversion, a, b, exportFormat, progress_callback=None):
 
         # Actual export
         name = 'MTF_' + orientation
-        ReX.exportData(frequencies, MTF_smoothed, MTF_smoothed, ['Frequencies (1/mm)', 'MTF', ''], path, name, exportFormat)
+        ReX.exportData(frequencies, MTF_smoothed, MTF_smoothed, ['Frequencies (1/mm)', 'MTF', ''], path, name,
+                       exportFormat)
 
         i = i + 1
 
@@ -297,7 +328,7 @@ def calculateMTF(path, conversion, a, b, exportFormat, progress_callback=None):
 
     # Define target frequencies
     print("Defining Target frequencies.")
-    sample_step = 0.1               # Frequency step (1/mm) añadido por AOL
+    sample_step = 0.1  # Frequency step (1/mm) añadido por AOL
     target_frequencies = np.arange(sample_step, fNyq + sample_step, sample_step)
     target_frequencies = target_frequencies[target_frequencies <= fNyq]
     print("Target frequencies defined.")

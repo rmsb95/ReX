@@ -3,7 +3,8 @@
 # ------------------------------------------------------ #
 # Developer: Rafael Manuel Segovia Brome
 # Date: 04-2025
-# Version: 1.0.1
+# Version: 1.0.2
+# Modified: Added roiSizeA and roiSizeB parameters for MTF
 
 import sys
 import os
@@ -16,16 +17,21 @@ from src.ReXNNPS import calculateNNPS
 from src.ReXMTF import calculateMTF
 from src.ReXDQE import calculateDQE
 from src.ReXpath import DICOMOrganizer
-from PyQt5.QtWidgets import QApplication, QMainWindow, QFileDialog, QMessageBox, QDialog, QTableWidget, QTableWidgetItem, QVBoxLayout, QLabel
+from PyQt5.QtWidgets import QApplication, QMainWindow, QFileDialog, QMessageBox, QDialog, QTableWidget, \
+    QTableWidgetItem, QVBoxLayout, QLabel
 from PyQt5.QtGui import QPixmap, QImage, QIcon, QPainter, QPen, QColor
 from PyQt5.QtCore import Qt, QThread, pyqtSignal, QTimer
 from src.UI.main_window import Ui_MainWindow
 from src.UI.dqe_window import Ui_Dialog as Form
 
-
 # Rutas de iconos
 dino_icon_path = ReX.resource_path("resources/dinosauricon.ico")
 tagline_path = ReX.resource_path('resources/HUVM-tagline.png')
+
+# Valores por defecto IEC para ROI
+IEC_DEFAULT_ROI_SIZE_A = 100  # mm (width)
+IEC_DEFAULT_ROI_SIZE_B = 50  # mm (height)
+
 
 class Worker(QThread):
     progress = pyqtSignal(int)
@@ -33,7 +39,7 @@ class Worker(QThread):
     error = pyqtSignal(str)
     log_signal = pyqtSignal(str)
 
-    def __init__(self, taskType, path, functionType, a, b, exportFormat):
+    def __init__(self, taskType, path, functionType, a, b, exportFormat, roiSizeA=100, roiSizeB=50):
         super().__init__()
         self.taskType = taskType
         self.path = path
@@ -41,6 +47,8 @@ class Worker(QThread):
         self.a = a
         self.b = b
         self.exportFormat = exportFormat
+        self.roiSizeA = roiSizeA
+        self.roiSizeB = roiSizeB
         self.success = False
         self.results = None
 
@@ -48,11 +56,13 @@ class Worker(QThread):
         try:
             if self.taskType == "NNPS":
                 self.log_signal.emit(">> Cálculo de NPS y NNPS iniciado.")
-                self.results = calculateNNPS(self.path, self.functionType, self.a, self.b, self.exportFormat, self.progress.emit)
+                self.results = calculateNNPS(self.path, self.functionType, self.a, self.b, self.exportFormat,
+                                             self.progress.emit)
 
             elif self.taskType == "MTF":
-                self.log_signal.emit(">> Cálculo de MTF iniciado.")
-                self.results = calculateMTF(self.path, self.functionType, self.a, self.b, self.exportFormat, self.progress.emit)
+                self.log_signal.emit(f">> Cálculo de MTF iniciado (ROI: {self.roiSizeA}x{self.roiSizeB} mm).")
+                self.results = calculateMTF(self.path, self.functionType, self.a, self.b, self.exportFormat,
+                                            self.progress.emit, self.roiSizeA, self.roiSizeB)
 
             # Una ejecución correcta implica:
             self.success = True
@@ -66,8 +76,10 @@ class Worker(QThread):
         finally:
             self.finished.emit(self.success)
 
+
 class DQEWindow(QDialog, Form):
     log_signal = pyqtSignal(str)
+
     def __init__(self, parent=None):
         super(DQEWindow, self).__init__(parent)
         self.setupUi(self)
@@ -80,10 +92,10 @@ class DQEWindow(QDialog, Form):
         self.selectNPS.clicked.connect(self.select_nnps_file)
         self.selectMTF.clicked.connect(self.select_mtf_file)
 
-
     def select_nnps_file(self):
         # It opens a QFileDialog to select the NNPS_to_DQE file
-        file_name, _ = QFileDialog.getOpenFileName(self, "Selecciona el archivo NNPS_to_DQE", "", "All Files (*);;Excel Files (*.xlsx);;CSV Files (*.csv)")
+        file_name, _ = QFileDialog.getOpenFileName(self, "Selecciona el archivo NNPS_to_DQE", "",
+                                                   "All Files (*);;Excel Files (*.xlsx);;CSV Files (*.csv)")
         if file_name:
             if 'NNPS_to_DQE' in file_name:
                 self.nnps_file = file_name
@@ -94,7 +106,8 @@ class DQEWindow(QDialog, Form):
 
     def select_mtf_file(self):
         # It opens a QFileDialog to select the MTF_to_DQE file
-        file_name, _ = QFileDialog.getOpenFileName(self, "Selecciona el archivo MTF_to_DQE", "", "All Files (*);;Excel Files (*.xlsx);;CSV Files (*.csv)")
+        file_name, _ = QFileDialog.getOpenFileName(self, "Selecciona el archivo MTF_to_DQE", "",
+                                                   "All Files (*);;Excel Files (*.xlsx);;CSV Files (*.csv)")
         if file_name:
             if 'MTF_to_DQE' in file_name:
                 self.mtf_file = file_name
@@ -129,7 +142,8 @@ class DQEWindow(QDialog, Form):
 
         # Guardar el archivo
         options = QFileDialog.Options()
-        file_path, _ = QFileDialog.getSaveFileName(self, "Selecciona directorio para guardar el archivo", "/home/qt_user/Documents/DQE.xlsx",
+        file_path, _ = QFileDialog.getSaveFileName(self, "Selecciona directorio para guardar el archivo",
+                                                   "/home/qt_user/Documents/DQE.xlsx",
                                                    "All Files (*);;Excel Files (*.xlsx);;CSV Files (*.csv)",
                                                    options=options)
         if file_path:
@@ -140,6 +154,7 @@ class DQEWindow(QDialog, Form):
 
         self.log_signal.emit("DQE calculada.")
         QMessageBox.information(self, "Resultado", f"La ejecución ha finalizado.")
+
 
 class MainWindow(QMainWindow, Ui_MainWindow):
     def __init__(self):
@@ -152,7 +167,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # Lista de archivos de imagen DICOM
         self.image_files = []
         self.current_index = -1
-        self.directory= ""
+        self.directory = ""
         self.rois = {}
 
         # Conectar botones a métodos
@@ -166,6 +181,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.actionHelp.triggered.connect(self.show_help)
         self.actionAbout_us.triggered.connect(self.show_about)
 
+        # NEW: Connect reset ROI button
+        self.resetROIButton.clicked.connect(self.reset_roi_to_iec_defaults)
 
         # Inicialmente deshabilitar los botones de navegación
         self.prevButton.setEnabled(False)
@@ -181,6 +198,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.dqe_window = DQEWindow(self)
         self.dqe_window.log_signal.connect(self.log_message)
 
+    def reset_roi_to_iec_defaults(self):
+        """Reset ROI size parameters to IEC default values"""
+        self.spinBox_roiSizeA.setValue(IEC_DEFAULT_ROI_SIZE_A)
+        self.spinBox_roiSizeB.setValue(IEC_DEFAULT_ROI_SIZE_B)
+        self.logText.append(">> Valores ROI restablecidos a valores por defecto IEC (A=100mm, B=50mm).")
+
     def open_dqe_window(self):
         self.dqe_window.exec()
 
@@ -194,18 +217,18 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         1. Carga de Imágenes:
            - Haga clic en 'Examinar' para seleccionar un directorio con imágenes DICOM.
-             
+
              > Requisitos para cálculo de MTF:
              - Debe haber como mucho dos imágenes DICOM en el directorio para el cálculo de MTF,
                y ninguna imagen de otro tipo.
              - Si hay una imagen, puede ser en vertical o en horizontal.
              - Si hay dos imágenes, una debe ser en vertical y la otra en horizontal.
              - Para el posterior cálculo de la DQE, debe haber dos imágenes.
-             
+
              > Requisitos para cálculo de NPS y NNPS:
              - Debe haber al menos una imagen DICOM en el directorio para el cálculo de NPS,
                y ninguna imagen de otro tipo.               
-               
+
            - Use los botones de navegación para ver las imágenes y comprobar los requisitos.
 
         2. Cálculo de NPS y NNPS:
@@ -216,6 +239,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         3. Cálculo de MTF:
            - Siga los mismos pasos que para NNPS. Recuerde seleccionar el directorio adecuado.
+           - Opcionalmente, ajuste el tamaño del ROI (valores por defecto IEC: A=100mm, B=50mm).
            - Haga clic en 'Calcular MTF'.
 
         4. Cálculo de DQE:
@@ -224,6 +248,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
            - Elija la calidad del haz.
            - Introduzca el valor de kerma.
            - Haga clic en 'Calcular DQE'.
+
+        5. Parámetros ROI para MTF:
+           - Ancho (A): Tamaño horizontal del ROI en mm (por defecto: 100 mm según IEC).
+           - Alto (B): Tamaño vertical del ROI en mm (por defecto: 50 mm según IEC).
+           - Botón IEC: Restablece los valores a los valores por defecto según la norma IEC.
         """
 
         msg = QMessageBox(self)
@@ -275,7 +304,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                         self.logText.append(f"Archivo DICOM válido: {file_path}")
                 except Exception as e:
                     print(f"Archivo no válido {file_path}: {e}")
-                    #self.logText.append(f"Archivo no válido {file_path}: {e}")
+                    # self.logText.append(f"Archivo no válido {file_path}: {e}")
 
             self.image_files.sort()  # Ordenar archivos para una navegación coherente
             if self.image_files:
@@ -311,7 +340,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
             # Crear un objeto QImage desde el array de numpy
             bytes_per_line = windowed_image.shape[1] * 2
-            q_image = QImage(windowed_image, windowed_image.shape[1], windowed_image.shape[0], bytes_per_line, QImage.Format_Grayscale16)
+            q_image = QImage(windowed_image, windowed_image.shape[1], windowed_image.shape[0], bytes_per_line,
+                             QImage.Format_Grayscale16)
 
             # Copiar datos para asegurar la persistencia fuera del ámbito de esta función
             q_image = q_image.copy()
@@ -418,14 +448,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             # Mostrar resultados en tabla y gráfica
             if hasattr(self.worker, 'results'):
                 results = self.worker.results
-                if self.worker.taskType == 'MTF' or self.worker.taskType == 'NNPS':
+                if self.worker.taskType == 'MTF':
                     self.rois = results.get('rois', {})
                     ReX.show_results_table_and_graph(results.get('dataframe'), f"Resultados de {self.worker.taskType}")
                     # Refresh current image to show ROI
                     self.show_image(self.current_index)
                 else:
                     ReX.show_results_table_and_graph(results, f"Resultados de {self.worker.taskType}")
-
 
     def show_error(self, error_message):
         # Devolver la barra de progreso a 0
@@ -459,6 +488,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         b = self.doubleSpinBox_b.value()
         path = self.directory
 
+        # NEW: Get ROI size parameters
+        roiSizeA = self.spinBox_roiSizeA.value()
+        roiSizeB = self.spinBox_roiSizeB.value()
+
         if not path:
             QMessageBox.warning(self, "Advertencia", "No se ha seleccionado ningún directorio.")
             return
@@ -469,7 +502,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         QApplication.setOverrideCursor(Qt.WaitCursor)
 
-        self.worker = Worker('MTF', path, functionType, a, b, exportFormat)
+        # Pass ROI size parameters to Worker
+        self.worker = Worker('MTF', path, functionType, a, b, exportFormat, roiSizeA, roiSizeB)
         self.worker.progress.connect(self.update_progress)
         self.worker.finished.connect(self.on_finished)
         self.worker.error.connect(self.show_error)
@@ -480,6 +514,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.Button_DQE.setEnabled(False)
 
         self.worker.start()
+
 
 class SplashScreen(QDialog):
     def __init__(self):
@@ -525,6 +560,7 @@ class SplashScreen(QDialog):
         self.main_window = MainWindow()
         self.main_window.show()
 
+
 def main():
     app = QApplication(sys.argv)
 
@@ -533,6 +569,7 @@ def main():
     splash.show()
 
     sys.exit(app.exec_())
+
 
 if __name__ == "__main__":
     main()
