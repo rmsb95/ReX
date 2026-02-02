@@ -70,7 +70,7 @@ def cropImage(image, roiSizeX, roiSizeY, delta_x, delta_y, despCenterX, despCent
 
     # Recortar la imagen
     croppedImage = image[startY:endY, startX:endX]
-    return croppedImage, cropHeight, cropWidth
+    return croppedImage, cropHeight, cropWidth, startX, startY
 
 
 def evaluateCentering(image, meanDose):

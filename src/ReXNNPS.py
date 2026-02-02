@@ -74,7 +74,7 @@ def calculateNNPS(path, conversion, a, b, exportFormat, progress_callback=None):
             doseImage = np.exp((dicomImage.astype(float) - b) / a)
 
         # Crop 125x125 mm^2 centered ROI
-        croppedImage, cropHeight, cropWidth = ReX.cropImage(doseImage, cropSize, cropSize, pixelSpacing, pixelSpacing,
+        croppedImage, cropHeight, cropWidth, _, _ = ReX.cropImage(doseImage, cropSize, cropSize, pixelSpacing, pixelSpacing,
                                                             offsetCenterX, offsetCenterY)
         croppedImageArray = np.array(croppedImage)
 
@@ -99,7 +99,7 @@ def calculateNNPS(path, conversion, a, b, exportFormat, progress_callback=None):
                     offsetCenterY = int(input("Enter a new value (in pixels) for offsetCenterY: "))
 
                     # Recalculate
-                    croppedImage, _, _ = ReX.cropImage(doseImage, cropSize, cropSize, pixelSpacing, pixelSpacing,
+                    croppedImage, _, _, _, _ = ReX.cropImage(doseImage, cropSize, cropSize, pixelSpacing, pixelSpacing,
                                                        offsetCenterX,
                                                        offsetCenterY)
 

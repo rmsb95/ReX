@@ -22,7 +22,7 @@ from src import ReXfunc as ReX
 # Section 1. Parameters
 # ---------------------
 # path = 'resources/Normal.dcm'
-path = r'C:\Users\SegoviaRafaelM62F\Desktop\Prueba_MTF'
+path = r'C:\Users\SegoviaRafaelM62F\Desktop\Nano\MTF'
 files = glob.glob(os.path.join(path, '*.DCM'))
 
 # Export format (saved in path): 'excel' or 'csv'
@@ -40,9 +40,9 @@ roiSizeBUC = 150
 # Coefficients of the response function according to:
 # PV = a·K + b (if linear)
 # PV = a·ln(K) + b (if log)
-conversion = 'linear' # or 'log'
-a = 607.47
-b = 67.70
+conversion = 'log' # or 'linear'
+a = 1750
+b = 7500
 
 # Offset (px) from center to trim ROI
 offsetCenterX = 0
@@ -86,7 +86,7 @@ for file in files:
         doseImage = (dicomImage.astype(float) - b) / a
 
     elif conversion == 'log':
-        doseImage = math.exp((dicomImage.astype(float) - b) / a)
+        doseImage = np.exp((dicomImage.astype(float) - b) / a)
 
     # Substitute negative values -> zeros
     doseImage[doseImage < 0] = 0
@@ -95,7 +95,7 @@ for file in files:
     # Section 2*. Non-uniformity correction
     # -------------------------------------
     # Crop the ROI for the correction
-    croppedImage, _, _ = ReX.cropImage(doseImage, roiSizeBUC, roiSizeAUC, pixelSpacing, pixelSpacing,
+    croppedImage, _, _, _, _ = ReX.cropImage(doseImage, roiSizeBUC, roiSizeAUC, pixelSpacing, pixelSpacing,
                                                         offsetCenterX, offsetCenterY)
 
     if isNeeded == 1:
@@ -112,7 +112,7 @@ for file in files:
     # Section 3. MTF ROI
     # -------------------
     # Crop 100 mm x 50 mm central ROI for MTF
-    croppedROI, _, _ = ReX.cropImage(corrImage, roiSizeB, roiSizeA, pixelSpacing, pixelSpacing, offsetCenterX, offsetCenterY)
+    croppedROI, _, _, _, _ = ReX.cropImage(corrImage, roiSizeB, roiSizeA, pixelSpacing, pixelSpacing, offsetCenterX, offsetCenterY)
 
     plt.figure()  # Creates a new figure window
     plt.imshow(croppedROI, cmap='gray')  # Display the original image
@@ -133,7 +133,7 @@ for file in files:
     if orientation == 'vertical':
 
         NAngle = abs(90 - absAngle)
-        croppedROI, _, _ = ReX.cropImage(corrImage, roiSizeA, roiSizeB, pixelSpacing, pixelSpacing, offsetCenterX,
+        croppedROI, _, _, _, _ = ReX.cropImage(corrImage, roiSizeA, roiSizeB, pixelSpacing, pixelSpacing, offsetCenterX,
                                          offsetCenterY)
 
         if absAngle > 90:

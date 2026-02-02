@@ -17,7 +17,7 @@ from src.ReXMTF import calculateMTF
 from src.ReXDQE import calculateDQE
 from src.ReXpath import DICOMOrganizer
 from PyQt5.QtWidgets import QApplication, QMainWindow, QFileDialog, QMessageBox, QDialog, QTableWidget, QTableWidgetItem, QVBoxLayout, QLabel
-from PyQt5.QtGui import QPixmap, QImage, QIcon
+from PyQt5.QtGui import QPixmap, QImage, QIcon, QPainter, QPen, QColor
 from PyQt5.QtCore import Qt, QThread, pyqtSignal, QTimer
 from src.UI.main_window import Ui_MainWindow
 from src.UI.dqe_window import Ui_Dialog as Form
@@ -42,6 +42,7 @@ class Worker(QThread):
         self.b = b
         self.exportFormat = exportFormat
         self.success = False
+        self.results = None
 
     def run(self):
         try:
@@ -152,6 +153,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.image_files = []
         self.current_index = -1
         self.directory= ""
+        self.rois = {}
 
         # Conectar botones a métodos
         self.prevButton.clicked.connect(self.show_previous_image)
@@ -300,7 +302,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def show_image(self, index):
         if 0 <= index < len(self.image_files):
-            dicom_data = pydicom.dcmread(self.image_files[index])
+            file_path = self.image_files[index]
+            dicom_data = pydicom.dcmread(file_path)
             image_array = dicom_data.pixel_array
 
             # Apliquemos un ajuste de ventana (ajusta estos valores según tus necesidades)
@@ -314,7 +317,19 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             q_image = q_image.copy()
 
             # Convertir QImage a QPixmap y mostrarlo en el label
-            self.imageLabel.setPixmap(QPixmap.fromImage(q_image))
+            pixmap = QPixmap.fromImage(q_image)
+
+            # Dibujar ROI si existe
+            if file_path in self.rois:
+                y, x, w, h = self.rois[file_path]
+                painter = QPainter(pixmap)
+                pen = QPen(QColor(255, 0, 0))
+                pen.setWidth(3)
+                painter.setPen(pen)
+                painter.drawRect(x, y, w, h)
+                painter.end()
+
+            self.imageLabel.setPixmap(pixmap)
             self.imageLabel.setScaledContents(True)
 
             # Actualizar el nombre de la imagen
@@ -402,7 +417,14 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             QMessageBox.information(self, "Completado", "El cálculo ha finalizado correctamente.")
             # Mostrar resultados en tabla y gráfica
             if hasattr(self.worker, 'results'):
-                ReX.show_results_table_and_graph(self.worker.results, f"Resultados de {self.worker.taskType}")
+                results = self.worker.results
+                if self.worker.taskType == 'MTF':
+                    self.rois = results.get('rois', {})
+                    ReX.show_results_table_and_graph(results.get('dataframe'), f"Resultados de {self.worker.taskType}")
+                    # Refresh current image to show ROI
+                    self.show_image(self.current_index)
+                else:
+                    ReX.show_results_table_and_graph(results, f"Resultados de {self.worker.taskType}")
 
 
     def show_error(self, error_message):

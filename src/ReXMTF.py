@@ -18,6 +18,7 @@ import pandas as pd
 import src.ReXfunc as ReX
 
 def calculateMTF(path, conversion, a, b, exportFormat, progress_callback=None):
+    rois = {}
 
     # ---------------------
     # Section 1. Parameters
@@ -87,7 +88,7 @@ def calculateMTF(path, conversion, a, b, exportFormat, progress_callback=None):
         # Section 2*. Non-uniformity correction
         # -------------------------------------
         # Crop the ROI for the correction
-        croppedImage, _, _ = ReX.cropImage(doseImage, roiSizeBUC, roiSizeAUC, pixelSpacing, pixelSpacing,
+        croppedImage, _, _, crop_start_row, crop_start_col = ReX.cropImage(doseImage, roiSizeBUC, roiSizeAUC, pixelSpacing, pixelSpacing,
                                                             offsetCenterX, offsetCenterY)
 
         if isNeeded == 1:
@@ -105,8 +106,8 @@ def calculateMTF(path, conversion, a, b, exportFormat, progress_callback=None):
         # Section 3. MTF ROI
         # -------------------
         # Crop 100 mm x 50 mm central ROI for MTF
-        croppedROI, _, _ = ReX.cropImage(corrImage, roiSizeB, roiSizeA, pixelSpacing, pixelSpacing, offsetCenterX, offsetCenterY)
-
+        croppedROI, _, _, roi_start_row, roi_start_col = ReX.cropImage(corrImage, roiSizeB, roiSizeA, pixelSpacing, pixelSpacing, offsetCenterX, offsetCenterY)
+        roi_height, roi_width = croppedROI.shape
 
         # -------------------------
         # Section 4. Edge Detection
@@ -127,8 +128,9 @@ def calculateMTF(path, conversion, a, b, exportFormat, progress_callback=None):
 
             verticalFlag = 1
 
-            croppedROI, _, _ = ReX.cropImage(corrImage, roiSizeA, roiSizeB, pixelSpacing, pixelSpacing, offsetCenterX,
+            croppedROI, _, _, roi_start_row, roi_start_col = ReX.cropImage(corrImage, roiSizeA, roiSizeB, pixelSpacing, pixelSpacing, offsetCenterX,
                                              offsetCenterY)
+            roi_height, roi_width = croppedROI.shape
 
             # Angle is recalculated after cropping
             angle_after_new_cropping, _ = ReX.edgeDetection(croppedROI)
@@ -149,6 +151,10 @@ def calculateMTF(path, conversion, a, b, exportFormat, progress_callback=None):
         if angle > 0:
             croppedROI = np.fliplr(croppedROI)
 
+        x = crop_start_col + roi_start_col
+        y = crop_start_row + roi_start_row
+        rois[file] = (x, y, roi_width, roi_height)
+        print(f"orientation: {orientation}, x: {x}, y: {y}, width: {roi_width}, height: {roi_height}")
 
         # -------------------------------------
         # Section 5. Edge Spread Function (ESF)
@@ -333,5 +339,4 @@ def calculateMTF(path, conversion, a, b, exportFormat, progress_callback=None):
 
     progress_callback(100)
     progress_callback(0)
-    return final_df
-
+    return {'dataframe': final_df, 'rois': rois}
