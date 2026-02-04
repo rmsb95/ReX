@@ -1,4 +1,4 @@
-pydicom~=2.4.4
+pydicom~=3.0.1
 numpy~=1.26.4
 matplotlib~=3.9.0
 PyQt5~=5.15.10
