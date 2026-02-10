@@ -16,6 +16,7 @@ import math
 import pandas as pd
 import numpy as np
 import numpy.fft as fft
+from scipy.ndimage import center_of_mass
 import src.ReXfunc as ReX
 
 
@@ -37,7 +38,7 @@ def calculateNNPS(path, conversion, a, b, exportFormat, progress_callback=None):
     numROIs = 0
 
     # Option to assess the adequacy of the ROI centering (not IEC)
-    evaluateCentering = 0
+    evaluateCentering = 1
 
     # Offset (px) from center to trim ROI
     offsetCenterX = 0
@@ -79,7 +80,7 @@ def calculateNNPS(path, conversion, a, b, exportFormat, progress_callback=None):
                                                             offsetCenterX, offsetCenterY)
         croppedImageArray = np.array(croppedImage)
 
-        rois[file] = (startY, startX, cropWidth, cropHeight)
+        rois[file] = (startY, startX, cropHeight, cropWidth)
         print(f"x: {startY}, y: {startX}")
 
         # Initialize dose array
@@ -99,14 +100,24 @@ def calculateNNPS(path, conversion, a, b, exportFormat, progress_callback=None):
                 print(f'Warning: cropped ROI {i} has pixel values below threshold (80%). Try changing center OffSet.')
 
                 while areThereLowerPixels:
-                    offsetCenterX = int(input("Enter a new value (in pixels) for offsetCenterX: "))
-                    offsetCenterY = int(input("Enter a new value (in pixels) for offsetCenterY: "))
+                    # buscamos el centro de masa de la imagen.
+                    centro = center_of_mass(doseImage)
+
+                    # offsetCenterX = int(input("Enter a new value (in pixels) for offsetCenterX: "))
+                    # offsetCenterY = int(input("Enter a new value (in pixels) for offsetCenterY: "))
+
+                    offsetCenterY = int(centro[0] - (startY + cropHeight / 2))
+                    offsetCenterX = int(centro[1] - (startX + cropWidth / 2))
+                    print(doseImage.shape)
+                    print(f"New offsetCenterX: {offsetCenterX}, New offsetCenterY: {offsetCenterY}")
+
 
                     # Recalculate
                     croppedImage, _, _, startX, startY = ReX.cropImage(doseImage, cropSize, cropSize, pixelSpacing, pixelSpacing,
                                                        offsetCenterX,
                                                        offsetCenterY)
-                    rois[file] = (startX, startY, cropWidth, cropHeight)
+                    rois[file] = (startY, startX, cropHeight, cropWidth)
+                    # rois[file] = (startX, startY, cropWidth, cropHeight)
 
                     # Evaluate again
                     areThereLowerPixels = ReX.evaluateCentering(croppedImage, dose[i])
