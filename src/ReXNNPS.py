@@ -99,7 +99,15 @@ def calculateNNPS(path, conversion, a, b, exportFormat, progress_callback=None):
             if areThereLowerPixels:
                 print(f'Warning: cropped ROI {i} has pixel values below threshold (80%). Try changing center OffSet.')
 
+                maxIterations = 10
+                iteration = 0
                 while areThereLowerPixels:
+                    if iteration >= maxIterations:
+                        print(f'Warning: ROI {i} could not be centered after {maxIterations} iterations. '
+                              f'The image may not be suitable for NPS analysis (e.g. MTF image). '
+                              f'Proceeding with the current ROI.')
+                        break
+
                     # buscamos el centro de masa de la imagen.
                     centro = center_of_mass(doseImage)
 
@@ -121,12 +129,14 @@ def calculateNNPS(path, conversion, a, b, exportFormat, progress_callback=None):
 
                     # Evaluate again
                     areThereLowerPixels = ReX.evaluateCentering(croppedImage, dose[i])
+                    iteration += 1
 
                 # Recalculate after evaluation
                 croppedImageArray = np.array(croppedImage)
                 dose[i] = croppedImageArray.mean()
 
-                print(f'Great! Cropped ROI {i} is well centered now.')
+                if not areThereLowerPixels:
+                    print(f'Great! Cropped ROI {i} is well centered now.')
 
                 # TO BE IMPROVED: AUTOMATE CENTERING. GET THE MAX INDEX WITH 1 IN LOWERPIXEL MATRIX AND ADJUST OFFSET
             else:
