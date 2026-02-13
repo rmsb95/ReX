@@ -20,7 +20,7 @@ from scipy.ndimage import center_of_mass
 import src.ReXfunc as ReX
 
 
-def calculateNNPS(path, conversion, a, b, exportFormat, progress_callback=None):
+def calculateNNPS(path, conversion, a, b, exportFormat, progress_callback=None, interaction_callback=None):
     rois = {}
     # ---------------------
     # Section 1. Parameters
@@ -48,7 +48,8 @@ def calculateNNPS(path, conversion, a, b, exportFormat, progress_callback=None):
     # Section 2. Image Loop
     # ---------------------
     for n in range(1, 20, 1):
-        progress_callback(n)
+        if progress_callback:
+            progress_callback(n)
 
     i = 0
     for file in files:
@@ -103,6 +104,13 @@ def calculateNNPS(path, conversion, a, b, exportFormat, progress_callback=None):
                 iteration = 0
                 while areThereLowerPixels:
                     if iteration >= maxIterations:
+                        should_continue = True
+                        if interaction_callback:
+                            should_continue = interaction_callback(f"No se ha encontrado el centro del ROI {i} tras {maxIterations} iteraciones.")
+                        
+                        if not should_continue:
+                            raise Exception("Operación cancelada por el usuario.")
+                        
                         print(f'Warning: ROI {i} could not be centered after {maxIterations} iterations. '
                               f'The image may not be suitable for NPS analysis (e.g. MTF image). '
                               f'Proceeding with the current ROI.')
@@ -167,8 +175,10 @@ def calculateNNPS(path, conversion, a, b, exportFormat, progress_callback=None):
         i = i + 1
 
     for n in range(30, 50, 1):
-        progress_callback(n)
-    progress_callback(55)
+        if progress_callback:
+            progress_callback(n)
+    if progress_callback:
+        progress_callback(55)
     # ---------------------
     #   Section 3. 2D NPS
     # ---------------------
@@ -184,7 +194,8 @@ def calculateNNPS(path, conversion, a, b, exportFormat, progress_callback=None):
     meanDose = np.mean(dose[:])
     print(f'The average dose of the images is: {meanDose:.2f} µGy.')
 
-    progress_callback(60)
+    if progress_callback:
+        progress_callback(60)
 
     # 2D NPS
     NPS = pixelSpacing * pixelSpacing / (numROIs * 256 * 256) * sum_nps_data
@@ -193,7 +204,8 @@ def calculateNNPS(path, conversion, a, b, exportFormat, progress_callback=None):
     # ---------------------
     #   Section 4. 1D NPS
     # ---------------------
-    progress_callback(65)
+    if progress_callback:
+        progress_callback(65)
 
     # Defining some parameters
     fint = 0.01 / pixelSpacing # Binning frequency (IEC)
@@ -205,7 +217,8 @@ def calculateNNPS(path, conversion, a, b, exportFormat, progress_callback=None):
     X, Y = np.meshgrid(frequenciesGrid, frequenciesGrid)
     frequenciesRadial = np.sqrt(X**2 + Y**2)
 
-    progress_callback(70)
+    if progress_callback:
+        progress_callback(70)
 
     # Select 14 vertical lines & 14 horizontal lines, but not the center
     lineIndexes = np.concatenate([
@@ -214,14 +227,16 @@ def calculateNNPS(path, conversion, a, b, exportFormat, progress_callback=None):
     ]).astype(int)
 
 
-    progress_callback(75)
+    if progress_callback:
+        progress_callback(75)
 
     # Initialize the vector to store the averages of NPS based on spatial frequencies
     frequencies = np.linspace(0, np.max(frequenciesRadial), int(center))
     NPS_vertical = np.zeros_like(frequencies)
     NPS_horizontal = np.zeros_like(frequencies)
 
-    progress_callback(80)
+    if progress_callback:
+        progress_callback(80)
     for i, f in enumerate(frequencies):
         lowerLimit = f - 0.5 * fint
         upperLimit = f + 0.5 * fint
@@ -237,7 +252,8 @@ def calculateNNPS(path, conversion, a, b, exportFormat, progress_callback=None):
         NPS_horizontal[i] = np.mean(NPS[horizontalMask])
         print(f"Finished mean number {i}!")
 
-    progress_callback(85)
+    if progress_callback:
+        progress_callback(85)
 
     # Removing NaN values
     validValues = ~np.isnan(NPS_vertical)
@@ -251,7 +267,8 @@ def calculateNNPS(path, conversion, a, b, exportFormat, progress_callback=None):
     # ---------------------
     #   Section 5. NNPS
     # ---------------------
-    progress_callback(90)
+    if progress_callback:
+        progress_callback(90)
     NNPS_vertical = NPS_vertical / (meanDose ** 2)
     NNPS_horizontal = NPS_horizontal / (meanDose ** 2)
 
@@ -259,14 +276,16 @@ def calculateNNPS(path, conversion, a, b, exportFormat, progress_callback=None):
     #   Section 6. Export
     # ---------------------
     for n in range(90,99,1):
-        progress_callback(i)
+        if progress_callback:
+            progress_callback(i)
     # Export NPS data
     ReX.exportData(verticalFrequencies, NPS_horizontal, NPS_vertical, ['Frequencies (1/mm)','NPS Horizontal', 'NPS Vertical'], path, 'NPS_data', exportFormat)
     # Export NNPS data
     ReX.exportData(verticalFrequencies,  NNPS_horizontal, NNPS_vertical, ['Frequencies (1/mm)','NNPS Horizontal', 'NNPS Vertical'], path, 'NNPS_data', exportFormat)
 
-    progress_callback(100)
-    progress_callback(0)
+    if progress_callback:
+        progress_callback(100)
+        progress_callback(0)
 
     # ------------------------
     #   Section 7. Data to DQE

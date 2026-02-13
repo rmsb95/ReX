@@ -20,7 +20,7 @@ from src.ReXpath import DICOMOrganizer
 from PyQt5.QtWidgets import QApplication, QMainWindow, QFileDialog, QMessageBox, QDialog, QTableWidget, \
     QTableWidgetItem, QVBoxLayout, QLabel
 from PyQt5.QtGui import QPixmap, QImage, QIcon, QPainter, QPen, QColor
-from PyQt5.QtCore import Qt, QThread, pyqtSignal, QTimer
+from PyQt5.QtCore import Qt, QThread, pyqtSignal, QTimer, QMetaObject, Q_ARG
 from src.UI.main_window import Ui_MainWindow
 from src.UI.dqe_window import Ui_Dialog as Form
 
@@ -38,6 +38,7 @@ class Worker(QThread):
     finished = pyqtSignal(bool)
     error = pyqtSignal(str)
     log_signal = pyqtSignal(str)
+    interaction_request = pyqtSignal(str, object) # Signal for interaction request
 
     def __init__(self, taskType, path, functionType, a, b, exportFormat, roiSizeA=100, roiSizeB=50):
         super().__init__()
@@ -51,13 +52,34 @@ class Worker(QThread):
         self.roiSizeB = roiSizeB
         self.success = False
         self.results = None
+        self.interaction_response = None
+        self.waiting_for_interaction = False
+
+    def interaction_callback(self, message):
+        """Callback function to be passed to the calculation logic."""
+        self.waiting_for_interaction = True
+        self.interaction_response = None
+        
+        # Emit signal to main thread to show dialog
+        self.interaction_request.emit(message, self)
+        
+        # Wait for response
+        while self.waiting_for_interaction:
+            self.msleep(100) # Sleep to avoid busy waiting
+            
+        return self.interaction_response
+
+    def set_interaction_response(self, response):
+        """Method to set the response from the main thread."""
+        self.interaction_response = response
+        self.waiting_for_interaction = False
 
     def run(self):
         try:
             if self.taskType == "NNPS":
                 self.log_signal.emit(">> Cálculo de NPS y NNPS iniciado.")
                 self.results = calculateNNPS(self.path, self.functionType, self.a, self.b, self.exportFormat,
-                                             self.progress.emit)
+                                             self.progress.emit, self.interaction_callback)
 
             elif self.taskType == "MTF":
                 self.log_signal.emit(f">> Cálculo de MTF iniciado (ROI: {self.roiSizeA}x{self.roiSizeB} mm).")
@@ -430,6 +452,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.worker.finished.connect(self.on_finished)
         self.worker.error.connect(self.show_error)
         self.worker.log_signal.connect(self.log_message)
+        self.worker.interaction_request.connect(self.handle_interaction_request)
 
         # Deshabilitar el botón mientras se ejecuta la tarea
         self.Button_NPS.setEnabled(False)
@@ -438,6 +461,19 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         # Iniciar la tarea en un hilo separado
         self.worker.start()
+
+    def handle_interaction_request(self, message, worker):
+        """Slot to handle interaction requests from the worker thread."""
+        msg = QMessageBox()
+        msg.setIcon(QMessageBox.Warning)
+        msg.setWindowTitle("Advertencia")
+        msg.setText(message)
+        msg.setInformativeText("Probablemente no se trate de una imagen de NNPS.\n¿Desea continuar con el cálculo o cancelar la operación?")
+        msg.setStandardButtons(QMessageBox.Yes | QMessageBox.Cancel)
+        ret = msg.exec_()
+
+        should_continue = (ret == QMessageBox.Yes)
+        worker.set_interaction_response(should_continue)
 
     def update_progress(self, value):
         self.progressBar.setValue(value)
