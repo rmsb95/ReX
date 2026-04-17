@@ -357,6 +357,9 @@ def calculateMTF(path, conversion, a, b, exportFormat, progress_callback=None, r
     final_df = pd.DataFrame(results).T
     final_df.index.name = 'Frequencies (1/mm)'
 
+    column_order = ['MTF Horizontal', 'MTF Vertical']
+    final_df = final_df[[col for col in column_order if col in final_df.columns]]
+
     if verticalFlag == 1 and horizontalFlag == 1:
         # Save final DataFrame
         if exportFormat == 'excel':
