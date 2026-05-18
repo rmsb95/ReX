@@ -287,7 +287,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         about_text = """
         ReX - Herramienta de Análisis de Calidad de Imagen
 
-        Versión: 2025.1
+        Versión: 2026.1
         Desarrolladores: 
         - Rafael Manuel Segovia Brome (@rmsb95)
         - Antonio Ortiz Lora (@aol)
@@ -296,7 +296,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         Servicio de Radiofísica
         Sevilla, España
 
-        © 2025
+        © 2026
         """
 
         msg = QMessageBox(self)
@@ -583,7 +583,7 @@ class SplashScreen(QDialog):
         title.setStyleSheet("font-size: 48px; font-weight: bold; color: white;")
         layout.addWidget(title)
 
-        subtitle = QLabel("Desarrolladores: @rmsb95 @aol\nVersión: 2024.1")
+        subtitle = QLabel("Desarrolladores: @rmsb95 @aol\nVersión: 2026.1")
         subtitle.setStyleSheet("font-size: 14px; color: white;")
         layout.addWidget(subtitle)
 
