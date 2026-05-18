@@ -1,9 +1,11 @@
 # ------------------------------------------------------ #
 # NOISE POWER SPECTRUM & NORMALIZED NOISE POWER SPECTRUM #
 # ------------------------------------------------------ #
-# Developer: Rafael Manuel Segovia Brome
+# Developer: Rafael Manuel Segovia Brome / Antonio Ortiz Lora
 # Date: 05-2024
-# Version: 1.0
+# Version: 2.0.0 - 2025/06
+# Modified: Unified general + mammography NNPS calculation.
+#           Modality is auto-detected from DICOM tag (0008,0060).
 #
 # ---------------------
 # Section 0. Imports
@@ -20,15 +22,149 @@ from scipy.ndimage import center_of_mass
 import src.ReXfunc as ReX
 
 
-def calculateNNPS(path, conversion, a, b, exportFormat, progress_callback=None, interaction_callback=None):
+def _detect_modality(files):
+    """
+    Detect the imaging modality from the first valid DICOM file.
+
+    Reads the DICOM tag Modality (0008,0060) to determine if the images
+    correspond to mammography ('MG') or general radiography.
+
+    Parameters
+    ----------
+    files : list of str
+        List of DICOM file paths.
+
+    Returns
+    -------
+    str
+        'MG' for mammography, 'general' for any other modality.
+    """
+    for f in files:
+        try:
+            ds = pydicom.dcmread(f, stop_before_pixels=True)
+            modality = getattr(ds, 'Modality', None)
+            if modality:
+                modality = modality.strip().upper()
+                print(f"DICOM Modality detected: {modality}")
+                if modality == 'MG':
+                    return 'MG'
+                else:
+                    return 'general'
+        except Exception as e:
+            print(f"Warning: could not read modality from {f}: {e}")
+    print("Warning: Modality tag not found in any file. Defaulting to 'general'.")
+    return 'general'
+
+
+def _calculate_mammography_offset(doseImage, cropSize, pixelSpacing):
+    """
+    Calculate the X offset so the ROI is centred at 60 mm from the
+    left edge of the image, as required for mammography (IEC 62220-1-1:2015).
+
+    Parameters
+    ----------
+    doseImage : np.ndarray
+        The linearised dose image (2D).
+    cropSize : int
+        Size of the ROI (mm).
+    pixelSpacing : float
+        Pixel spacing (mm/px).
+
+    Returns
+    -------
+    int
+        Offset in pixels from the image centre (for cropImage).
+    """
+    roiSizePx = int(cropSize / pixelSpacing)
+    imageWidth = doseImage.shape[1]
+    desiredLeftEdge = int((60 - cropSize / 2) / pixelSpacing)
+    targetCenterX = desiredLeftEdge + roiSizePx // 2
+    imageCenterX = imageWidth // 2
+    return targetCenterX - imageCenterX
+
+
+def _get_nnps_modality_params(modality):
+    """
+    Return modality-specific default parameters for the NNPS calculation.
+
+    Parameters
+    ----------
+    modality : str
+        'MG' for mammography, 'general' otherwise.
+
+    Returns
+    -------
+    dict with keys:
+        cropSize : int
+            Centered ROI size in mm.
+        evaluateCentering : int
+            1 = evaluate and auto-correct ROI centering, 0 = skip.
+    """
+    if modality == 'MG':
+        return {
+            'cropSize': 50,            # 50x50 mm for mammography
+            'evaluateCentering': 0,    # Disabled: ROI is positioned manually at 60 mm
+        }
+    else:
+        return {
+            'cropSize': 125,           # 125x125 mm for general radiography
+            'evaluateCentering': 1,    # Active: iterative centre-of-mass correction
+        }
+
+
+def calculateNNPS(path, conversion, a, b, exportFormat,
+                  progress_callback=None, interaction_callback=None):
+    """
+    Calculate the Noise Power Spectrum (NPS) and Normalized NPS (NNPS).
+
+    The imaging modality is automatically detected from the DICOM tag
+    Modality (0008,0060). When mammography ('MG') is detected, the
+    algorithm uses a smaller ROI (50 mm vs 125 mm), positions it at
+    60 mm from the left edge, and disables iterative centering.
+
+    Parameters
+    ----------
+    path : str
+        Path to the directory containing DICOM files.
+    conversion : str
+        Type of conversion function ('linear' or 'log').
+    a : float
+        Coefficient 'a' of the response function.
+    b : float
+        Coefficient 'b' of the response function.
+    exportFormat : str
+        Export format ('excel' or 'csv').
+    progress_callback : callable, optional
+        Callback function to report progress (0-100).
+    interaction_callback : callable, optional
+        Callback function for user interaction when centering fails.
+
+    Returns
+    -------
+    dict
+        Dictionary containing:
+        - 'dataframe': pd.DataFrame with NNPS results
+        - 'rois': dict mapping file paths to (x, y, height, width)
+        - 'modality': str, detected modality ('MG' or 'general')
+    """
     rois = {}
+
     # ---------------------
     # Section 1. Parameters
     # ---------------------
     files = ReX.find_dicom_files(path)
 
-    # Centered ROI size (mm)
-    cropSize = 125
+    # Auto-detect modality from DICOM files
+    modality = _detect_modality(files)
+    print(f"Operating in modality mode: {modality}")
+
+    # Get modality-specific parameters
+    params = _get_nnps_modality_params(modality)
+    cropSize = params['cropSize']
+    evaluateCentering = params['evaluateCentering']
+
+    print(f"NNPS crop ROI: {cropSize} x {cropSize} mm")
+    print(f"Centering evaluation: {'enabled' if evaluateCentering else 'disabled'}")
 
     # Small ROI size & step size (px) for NPS [IEC]
     roiSize = 256
@@ -36,9 +172,6 @@ def calculateNNPS(path, conversion, a, b, exportFormat, progress_callback=None, 
 
     # Counter of ROIs
     numROIs = 0
-
-    # Option to assess the adequacy of the ROI centering (not IEC)
-    evaluateCentering = 1
 
     # Offset (px) from center to trim ROI
     offsetCenterX = 0
@@ -72,17 +205,26 @@ def calculateNNPS(path, conversion, a, b, exportFormat, progress_callback=None, 
         # Linearize data (from Mean Pixel Value to Dose)
         if conversion == 'linear':
             doseImage = (dicomImage.astype(float) - b) / a
-
         elif conversion == 'log':
             doseImage = np.exp((dicomImage.astype(float) - b) / a)
 
-        # Crop 125x125 mm^2 centered ROI
-        croppedImage, cropHeight, cropWidth, startX, startY = ReX.cropImage(doseImage, cropSize, cropSize, pixelSpacing, pixelSpacing,
-                                                            offsetCenterX, offsetCenterY)
+        # --- Mammography-specific offset ---
+        if modality == 'MG':
+            offsetCenterX = _calculate_mammography_offset(doseImage, cropSize, pixelSpacing)
+            offsetCenterY = 0
+            print(f"Mammography offset: X = {offsetCenterX} px (60 mm from left edge)")
+
+        # Crop centered ROI
+        croppedImage, cropHeight, cropWidth, startX, startY = ReX.cropImage(
+            doseImage, cropSize, cropSize,
+            pixelSpacing, pixelSpacing,
+            offsetCenterX, offsetCenterY
+        )
         croppedImageArray = np.array(croppedImage)
 
         rois[file] = (startY, startX, cropHeight, cropWidth)
-        print(f"x: {startY}, y: {startX}")
+        print(f"ROI position - x: {startY} px ({startY * pixelSpacing:.1f} mm), "
+              f"y: {startX} px ({startX * pixelSpacing:.1f} mm)")
 
         # Initialize dose array
         if i == 0:
@@ -94,11 +236,13 @@ def calculateNNPS(path, conversion, a, b, exportFormat, progress_callback=None, 
         print(f"Dose of file {file} is {dose[i]} µGy")
 
         # Evaluate adequacy of the centering (not IEC)
+        # Only for general radiography; disabled for mammography
         if evaluateCentering == 1:
             areThereLowerPixels = ReX.evaluateCentering(croppedImage, dose[i])
 
             if areThereLowerPixels:
-                print(f'Warning: cropped ROI {i} has pixel values below threshold (80%). Try changing center OffSet.')
+                print(f'Warning: cropped ROI {i} has pixel values below threshold (80%). '
+                      f'Try changing center OffSet.')
 
                 maxIterations = 10
                 iteration = 0
@@ -106,34 +250,35 @@ def calculateNNPS(path, conversion, a, b, exportFormat, progress_callback=None, 
                     if iteration >= maxIterations:
                         should_continue = True
                         if interaction_callback:
-                            should_continue = interaction_callback(f"No se ha encontrado el centro del ROI {i} tras {maxIterations} iteraciones.")
-                        
+                            should_continue = interaction_callback(
+                                f"No se ha encontrado el centro del ROI {i} "
+                                f"tras {maxIterations} iteraciones."
+                            )
+
                         if not should_continue:
                             raise Exception("Operación cancelada por el usuario.")
-                        
-                        print(f'Warning: ROI {i} could not be centered after {maxIterations} iterations. '
-                              f'The image may not be suitable for NPS analysis (e.g. MTF image). '
+
+                        print(f'Warning: ROI {i} could not be centered after '
+                              f'{maxIterations} iterations. The image may not be '
+                              f'suitable for NPS analysis (e.g. MTF image). '
                               f'Proceeding with the current ROI.')
                         break
 
-                    # buscamos el centro de masa de la imagen.
+                    # Find the centre of mass of the image
                     centro = center_of_mass(doseImage)
-
-                    # offsetCenterX = int(input("Enter a new value (in pixels) for offsetCenterX: "))
-                    # offsetCenterY = int(input("Enter a new value (in pixels) for offsetCenterY: "))
 
                     offsetCenterY = int(centro[0] - (startY + cropHeight / 2))
                     offsetCenterX = int(centro[1] - (startX + cropWidth / 2))
                     print(doseImage.shape)
                     print(f"New offsetCenterX: {offsetCenterX}, New offsetCenterY: {offsetCenterY}")
 
-
                     # Recalculate
-                    croppedImage, _, _, startX, startY = ReX.cropImage(doseImage, cropSize, cropSize, pixelSpacing, pixelSpacing,
-                                                       offsetCenterX,
-                                                       offsetCenterY)
+                    croppedImage, _, _, startX, startY = ReX.cropImage(
+                        doseImage, cropSize, cropSize,
+                        pixelSpacing, pixelSpacing,
+                        offsetCenterX, offsetCenterY
+                    )
                     rois[file] = (startY, startX, cropHeight, cropWidth)
-                    # rois[file] = (startX, startY, cropWidth, cropHeight)
 
                     # Evaluate again
                     areThereLowerPixels = ReX.evaluateCentering(croppedImage, dose[i])
@@ -146,15 +291,11 @@ def calculateNNPS(path, conversion, a, b, exportFormat, progress_callback=None, 
                 if not areThereLowerPixels:
                     print(f'Great! Cropped ROI {i} is well centered now.')
 
-                # TO BE IMPROVED: AUTOMATE CENTERING. GET THE MAX INDEX WITH 1 IN LOWERPIXEL MATRIX AND ADJUST OFFSET
             else:
                 print(f'Cropped ROI {i} is well centered.')
 
-
         # Substracting the 2D polynomial of best fit
         residualImage = ReX.adjustedImage(croppedImage)
-        # TO INVESTIGATE: IS IT POSSIBLE TO GET BETTER FITTING?
-
 
         # Create 256x256 px^2 ROIs. Overlapped 128 px.
         if numROIs == 0:
@@ -179,14 +320,13 @@ def calculateNNPS(path, conversion, a, b, exportFormat, progress_callback=None, 
             progress_callback(n)
     if progress_callback:
         progress_callback(55)
+
     # ---------------------
     #   Section 3. 2D NPS
     # ---------------------
     # Summation of ROIs
-    # Initialize an accumulated sum matrix with the same dimension as the elements in NPS
     sum_nps_data = np.zeros_like(nps_data[0])
 
-    # Iterate through each element of npsData and add its content to the total sum
     for roi_data in nps_data:
         sum_nps_data += roi_data
 
@@ -208,24 +348,23 @@ def calculateNNPS(path, conversion, a, b, exportFormat, progress_callback=None, 
         progress_callback(65)
 
     # Defining some parameters
-    fint = 0.01 / pixelSpacing # Binning frequency (IEC)
+    fint = 0.01 / pixelSpacing  # Binning frequency (IEC)
     NPS_dim = NPS.shape[0]
     center = NPS_dim / 2
 
     # Calculation of spacial frequencies in the sense of distances
-    frequenciesGrid = np.linspace(-center, center-1, NPS_dim) / (NPS_dim * pixelSpacing)
+    frequenciesGrid = np.linspace(-center, center - 1, NPS_dim) / (NPS_dim * pixelSpacing)
     X, Y = np.meshgrid(frequenciesGrid, frequenciesGrid)
-    frequenciesRadial = np.sqrt(X**2 + Y**2)
+    frequenciesRadial = np.sqrt(X ** 2 + Y ** 2)
 
     if progress_callback:
         progress_callback(70)
 
     # Select 14 vertical lines & 14 horizontal lines, but not the center
     lineIndexes = np.concatenate([
-        np.arange(center - 7, center),  # Left
-        np.arange(center + 1, center + 8)   # Right
+        np.arange(center - 7, center),       # Left
+        np.arange(center + 1, center + 8)    # Right
     ]).astype(int)
-
 
     if progress_callback:
         progress_callback(75)
@@ -237,12 +376,12 @@ def calculateNNPS(path, conversion, a, b, exportFormat, progress_callback=None, 
 
     if progress_callback:
         progress_callback(80)
+
     for i, f in enumerate(frequencies):
         lowerLimit = f - 0.5 * fint
         upperLimit = f + 0.5 * fint
 
         # Select positions that fall within the frequency interval
-        # Creates a logical matrix of the same size as NPS where the condition is met
         mask = (frequenciesRadial >= lowerLimit) & (frequenciesRadial <= upperLimit)
 
         # Average the values of the 14 lines for the selected spatial frequencies
@@ -269,19 +408,25 @@ def calculateNNPS(path, conversion, a, b, exportFormat, progress_callback=None, 
     # ---------------------
     if progress_callback:
         progress_callback(90)
+
     NNPS_vertical = NPS_vertical / (meanDose ** 2)
     NNPS_horizontal = NPS_horizontal / (meanDose ** 2)
 
     # ---------------------
     #   Section 6. Export
     # ---------------------
-    for n in range(90,99,1):
+    for n in range(90, 99, 1):
         if progress_callback:
-            progress_callback(i)
+            progress_callback(n)
+
     # Export NPS data
-    ReX.exportData(verticalFrequencies, NPS_horizontal, NPS_vertical, ['Frequencies (1/mm)','NPS Horizontal', 'NPS Vertical'], path, 'NPS_data', exportFormat)
+    ReX.exportData(verticalFrequencies, NPS_horizontal, NPS_vertical,
+                   ['Frequencies (1/mm)', 'NPS Horizontal', 'NPS Vertical'],
+                   path, 'NPS_data', exportFormat)
     # Export NNPS data
-    ReX.exportData(verticalFrequencies,  NNPS_horizontal, NNPS_vertical, ['Frequencies (1/mm)','NNPS Horizontal', 'NNPS Vertical'], path, 'NNPS_data', exportFormat)
+    ReX.exportData(verticalFrequencies, NNPS_horizontal, NNPS_vertical,
+                   ['Frequencies (1/mm)', 'NNPS Horizontal', 'NNPS Vertical'],
+                   path, 'NNPS_data', exportFormat)
 
     if progress_callback:
         progress_callback(100)
@@ -295,7 +440,7 @@ def calculateNNPS(path, conversion, a, b, exportFormat, progress_callback=None, 
     fNyq = 1 / (2 * pixelSpacing)
 
     # Create target frequencies array
-    sample_step = 0.1  # Frequency step (1/mm) añadido por AOL
+    sample_step = 0.1  # Frequency step (1/mm)
     target_frequencies = np.arange(sample_step, fNyq + sample_step, sample_step)
     target_frequencies = target_frequencies[target_frequencies <= fNyq]
 
@@ -342,4 +487,4 @@ def calculateNNPS(path, conversion, a, b, exportFormat, progress_callback=None, 
         output_file_path = os.path.join(path, 'NNPS_to_DQE.csv')
         NNPS_to_DQE.to_csv(output_file_path)
 
-    return {'dataframe': NNPS_to_DQE, 'rois': rois}
+    return {'dataframe': NNPS_to_DQE, 'rois': rois, 'modality': modality}

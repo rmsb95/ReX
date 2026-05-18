@@ -1,10 +1,13 @@
 # ------------------------------------------------------ #
 #           MODULATION TRANSFER FUNCTION (MTF)           #
 # ------------------------------------------------------ #
-# Developer: Rafael Manuel Segovia Brome
+# Developer: Rafael Manuel Segovia Brome / Antonio Ortiz Lora
 # Date: 05-2024
-# Version: 1.0.2 - 2025/06
-# Modified: roiSizeA and roiSizeB are now parameters
+# Version: 2.0.0 - 2025/06
+# Modified: Unified general + mammography MTF calculation.
+#           Modality is auto-detected from DICOM tag (0008,0060).
+#           roiSizeA and roiSizeB are now parameters with
+#           modality-specific defaults.
 #
 # ---------------------
 # Section 0. Imports
@@ -19,12 +22,127 @@ import pandas as pd
 import src.ReXfunc as ReX
 
 
-def calculateMTF(path, conversion, a, b, exportFormat, progress_callback=None, roiSizeA=100, roiSizeB=50):
+def _detect_modality(files):
+    """
+    Detect the imaging modality from the first valid DICOM file.
+
+    Reads the DICOM tag Modality (0008,0060) to determine if the images
+    correspond to mammography ('MG') or general radiography.
+
+    Parameters
+    ----------
+    files : list of str
+        List of DICOM file paths.
+
+    Returns
+    -------
+    str
+        'MG' for mammography, 'general' for any other modality.
+    """
+    for f in files:
+        try:
+            ds = pydicom.dcmread(f, stop_before_pixels=True)
+            modality = getattr(ds, 'Modality', None)
+            if modality:
+                modality = modality.strip().upper()
+                print(f"DICOM Modality detected: {modality}")
+                if modality == 'MG':
+                    return 'MG'
+                else:
+                    return 'general'
+        except Exception as e:
+            print(f"Warning: could not read modality from {f}: {e}")
+    print("Warning: Modality tag not found in any file. Defaulting to 'general'.")
+    return 'general'
+
+
+def _get_modality_params(modality, roiSizeA=None, roiSizeB=None):
+    """
+    Return modality-specific default parameters for the MTF calculation.
+
+    If roiSizeA or roiSizeB are explicitly provided (not None), they
+    override the modality defaults.
+
+    Parameters
+    ----------
+    modality : str
+        'MG' for mammography, 'general' otherwise.
+    roiSizeA : int or None
+        User-provided ROI dimension A (mm). None = use default.
+    roiSizeB : int or None
+        User-provided ROI dimension B (mm). None = use default.
+
+    Returns
+    -------
+    dict with keys:
+        roiSizeA, roiSizeB, roiSizeAUC, roiSizeBUC
+    """
+    if modality == 'MG':
+        # IEC 62220-1-2:2015 mammography defaults
+        default_A = 50   # height (mm)
+        default_B = 25   # width (mm)
+        _roiA = roiSizeA if roiSizeA is not None else default_A
+        _roiB = roiSizeB if roiSizeB is not None else default_B
+        # Non-uniformity correction ROI: fixed 100x100 mm for mammography
+        roiSizeAUC = 100
+        roiSizeBUC = 100
+    else:
+        # IEC 62220-1-1:2015 general radiography defaults
+        default_A = 100  # width (mm)
+        default_B = 50   # height (mm)
+        _roiA = roiSizeA if roiSizeA is not None else default_A
+        _roiB = roiSizeB if roiSizeB is not None else default_B
+        # Non-uniformity correction ROI: 1.5x the largest MTF ROI dimension
+        roiSizeAUC = int(max(_roiA, _roiB) * 1.5)
+        roiSizeBUC = int(max(_roiA, _roiB) * 1.5)
+
+    return {
+        'roiSizeA': _roiA,
+        'roiSizeB': _roiB,
+        'roiSizeAUC': roiSizeAUC,
+        'roiSizeBUC': roiSizeBUC,
+    }
+
+
+def _calculate_mammography_offset(doseImage, roiSizeAUC, pixelSpacing):
+    """
+    Calculate the X offset so the ROI is centred at 60 mm from the
+    left edge of the image, as required for mammography (IEC 62220-1-1:2015).
+
+    Parameters
+    ----------
+    doseImage : np.ndarray
+        The linearised dose image (2D).
+    roiSizeAUC : int
+        Width of the non-uniformity correction ROI (mm).
+    pixelSpacing : float
+        Pixel spacing (mm/px).
+
+    Returns
+    -------
+    int
+        Offset in pixels from the image centre (for cropImage).
+    """
+    roiSizeUCPx = int(roiSizeAUC / pixelSpacing)
+    imageWidth = doseImage.shape[1]
+    desiredLeftEdge = int((60 - roiSizeAUC / 2) / pixelSpacing)
+    targetCenterX = desiredLeftEdge + roiSizeUCPx // 2
+    imageCenterX = imageWidth // 2
+    return targetCenterX - imageCenterX
+
+
+def calculateMTF(path, conversion, a, b, exportFormat,
+                 progress_callback=None, roiSizeA=None, roiSizeB=None):
     """
     Calculate the Modulation Transfer Function (MTF).
 
-    Parameters:
-    -----------
+    The imaging modality is automatically detected from the DICOM tag
+    Modality (0008,0060). When mammography ('MG') is detected, the
+    algorithm uses mammography-specific ROI sizes, non-uniformity
+    correction parameters and ROI positioning (60 mm from the left edge).
+
+    Parameters
+    ----------
     path : str
         Path to the directory containing DICOM files.
     conversion : str
@@ -36,16 +154,21 @@ def calculateMTF(path, conversion, a, b, exportFormat, progress_callback=None, r
     exportFormat : str
         Export format ('excel' or 'csv').
     progress_callback : callable, optional
-        Callback function to report progress.
-    roiSizeA : int, optional
-        ROI width in mm (default: 100 mm per IEC 62220-1-1:2015).
-    roiSizeB : int, optional
-        ROI height in mm (default: 50 mm per IEC 62220-1-1:2015).
+        Callback function to report progress (0-100).
+    roiSizeA : int or None, optional
+        ROI dimension A in mm. None = modality default.
+        General: 100 mm (width), Mammography: 50 mm (height).
+    roiSizeB : int or None, optional
+        ROI dimension B in mm. None = modality default.
+        General: 50 mm (height), Mammography: 25 mm (width).
 
-    Returns:
-    --------
+    Returns
+    -------
     dict
-        Dictionary containing 'dataframe' with MTF results and 'rois' with ROI positions.
+        Dictionary containing:
+        - 'dataframe': pd.DataFrame with MTF results
+        - 'rois': dict mapping file paths to (x, y, width, height)
+        - 'modality': str, detected modality ('MG' or 'general')
     """
     rois = {}
 
@@ -54,21 +177,27 @@ def calculateMTF(path, conversion, a, b, exportFormat, progress_callback=None, r
     # ---------------------
     files = ReX.find_dicom_files(path)
 
+    # Auto-detect modality from DICOM files
+    modality = _detect_modality(files)
+    print(f"Operating in modality mode: {modality}")
+
+    # Get modality-specific parameters
+    params = _get_modality_params(modality, roiSizeA, roiSizeB)
+    roiSizeA = params['roiSizeA']
+    roiSizeB = params['roiSizeB']
+    roiSizeAUC = params['roiSizeAUC']
+    roiSizeBUC = params['roiSizeBUC']
+
+    print(f"MTF ROI: {roiSizeA} x {roiSizeB} mm")
+    print(f"Non-uniformity correction ROI: {roiSizeAUC} x {roiSizeBUC} mm")
+
     # Flags to determine if both orientations have been obtained
     verticalFlag = 0
     horizontalFlag = 0
 
-    # ROI size (mm) (IEC 62220-1-1:2015) considering vertical position of the edge
-    # Now these are parameters with default IEC values
-    # roiSizeA = 100  # width (now parameter)
-    # roiSizeB = 50   # height (now parameter)
-
-    # ROI size (mm) for non-uniformity correction (IEC 62220-1-1:2015)
-    # It should be at least 1.5 times bigger than the other one
-    roiSizeAUC = int(max(roiSizeA, roiSizeB) * 1.5)
-    roiSizeBUC = int(max(roiSizeA, roiSizeB) * 1.5)
-
     # Offset (px) from center to trim ROI
+    # For general: always (0, 0) — centred
+    # For mammography: calculated per image (60 mm from left edge)
     offsetCenterX = 0
     offsetCenterY = 0
 
@@ -106,7 +235,6 @@ def calculateMTF(path, conversion, a, b, exportFormat, progress_callback=None, r
         if conversion == 'linear':
             doseImage = (dicomImage.astype(float) - b) / a
             print("Se ha aplicado FR lineal")
-
         elif conversion == 'log':
             doseImage = np.exp((dicomImage.astype(float) - b) / a)
             print("Se ha aplicado FR log")
@@ -114,20 +242,27 @@ def calculateMTF(path, conversion, a, b, exportFormat, progress_callback=None, r
         # Substitute negative values -> zeros
         doseImage[doseImage < 0] = 0
 
+        # --- Mammography-specific offset ---
+        if modality == 'MG':
+            offsetCenterX = _calculate_mammography_offset(doseImage, roiSizeAUC, pixelSpacing)
+            offsetCenterY = 0
+            print(f"Mammography offset: X = {offsetCenterX} px (60 mm from left edge)")
+
         # -------------------------------------
         # Section 2*. Non-uniformity correction
         # -------------------------------------
         # Crop the ROI for the correction
-        croppedImage, _, _, crop_start_row, crop_start_col = ReX.cropImage(doseImage, roiSizeBUC, roiSizeAUC,
-                                                                           pixelSpacing, pixelSpacing,
-                                                                           offsetCenterX, offsetCenterY)
+        croppedImage, _, _, crop_start_row, crop_start_col = ReX.cropImage(
+            doseImage, roiSizeBUC, roiSizeAUC,
+            pixelSpacing, pixelSpacing,
+            offsetCenterX, offsetCenterY
+        )
 
         if isNeeded == 1:
             # Apply non-uniformity correction
             # Calculation of 2D best fit (S)
             # Corrected image = Original Image / S * S_avg
             corrImage = ReX.correctedImage(croppedImage)
-
         elif isNeeded == 0:
             # Not needed
             corrImage = croppedImage
@@ -135,9 +270,22 @@ def calculateMTF(path, conversion, a, b, exportFormat, progress_callback=None, r
         # -------------------
         # Section 3. MTF ROI
         # -------------------
+        # For mammography the sub-ROI is cropped from the centre of the
+        # correction ROI, so the offset is (0, 0) relative to corrImage.
+        # For general radiography the original offset is reused.
+        if modality == 'MG':
+            mtf_offsetX = 0
+            mtf_offsetY = 0
+        else:
+            mtf_offsetX = offsetCenterX
+            mtf_offsetY = offsetCenterY
+
         # Crop roiSizeA x roiSizeB central ROI for MTF
-        croppedROI, _, _, roi_start_row, roi_start_col = ReX.cropImage(corrImage, roiSizeB, roiSizeA, pixelSpacing,
-                                                                       pixelSpacing, offsetCenterX, offsetCenterY)
+        croppedROI, _, _, roi_start_row, roi_start_col = ReX.cropImage(
+            corrImage, roiSizeB, roiSizeA,
+            pixelSpacing, pixelSpacing,
+            mtf_offsetX, mtf_offsetY
+        )
         roi_height, roi_width = croppedROI.shape
 
         # -------------------------
@@ -159,9 +307,11 @@ def calculateMTF(path, conversion, a, b, exportFormat, progress_callback=None, r
 
             verticalFlag = 1
 
-            croppedROI, _, _, roi_start_row, roi_start_col = ReX.cropImage(corrImage, roiSizeA, roiSizeB, pixelSpacing,
-                                                                           pixelSpacing, offsetCenterX,
-                                                                           offsetCenterY)
+            croppedROI, _, _, roi_start_row, roi_start_col = ReX.cropImage(
+                corrImage, roiSizeA, roiSizeB,
+                pixelSpacing, pixelSpacing,
+                mtf_offsetX, mtf_offsetY
+            )
             roi_height, roi_width = croppedROI.shape
 
             # Angle is recalculated after cropping
@@ -205,8 +355,8 @@ def calculateMTF(path, conversion, a, b, exportFormat, progress_callback=None, r
         # Calculation of ESF for each group of N columns
         for k in range(1, numGroups + 1):
             # Calculate first index for each group of N columns
-            startCol = (k - 1) * N  # Esto queda modificado respecto a MATLAB
-            endCol = startCol + N  # Esto queda modificado respecto a MATLAB
+            startCol = (k - 1) * N
+            endCol = startCol + N
 
             # Get region for current group
             edgeRegion = croppedROI[:, startCol:endCol]
@@ -271,7 +421,11 @@ def calculateMTF(path, conversion, a, b, exportFormat, progress_callback=None, r
         frequencySpacing = 1 / (LSFlength * pixelSpacing * N)
 
         # Create the frequency vector
-        frequencies = np.linspace(-0.5 * N / pixelSpacing, 0.5 * N / pixelSpacing - frequencySpacing, LSFlength)
+        frequencies = np.linspace(
+            -0.5 * N / pixelSpacing,
+            0.5 * N / pixelSpacing - frequencySpacing,
+            LSFlength
+        )
 
         # Take the positive half
         frequencies = np.fft.fftshift(frequencies)
@@ -293,10 +447,9 @@ def calculateMTF(path, conversion, a, b, exportFormat, progress_callback=None, r
             upperLimit = f + 0.5 * fint
 
             # Select positions that fall within the frequency interval
-            # Creates a logical matrix of the same size as NPS where the condition is met
             mask = (frequencies >= lowerLimit) & (frequencies <= upperLimit)
 
-            # Average the values of the 14 lines for the selected spatial frequencies
+            # Average the values for the selected spatial frequencies
             MTF_smoothed[i] = np.mean(MTF[mask])
 
         # Normalize the smoothed MTF
@@ -315,8 +468,11 @@ def calculateMTF(path, conversion, a, b, exportFormat, progress_callback=None, r
 
         # Actual export
         name = 'MTF_' + orientation
-        ReX.exportData(frequencies, MTF_smoothed, MTF_smoothed, ['Frequencies (1/mm)', 'MTF', ''], path, name,
-                       exportFormat)
+        ReX.exportData(
+            frequencies, MTF_smoothed, MTF_smoothed,
+            ['Frequencies (1/mm)', 'MTF', ''],
+            path, name, exportFormat
+        )
 
         i = i + 1
 
@@ -338,17 +494,16 @@ def calculateMTF(path, conversion, a, b, exportFormat, progress_callback=None, r
     print("Result dictionary initialized")
 
     # Process each file in the directory
-    print("Bucle for")
+    print("Processing exported MTF files...")
     for file_name in os.listdir(path):
-        print(file_name)
         file_path = os.path.join(path, file_name)
         if "MTF_vertical" in file_name:
-            print("MTF vertical")
+            print(f"  Found: {file_name}")
             data = ReX.process_file(file_path, target_frequencies, 'MTF', exportFormat)
             for freq, value in data.items():
                 results[freq]['MTF Vertical'] = value
         elif "MTF_horizontal" in file_name:
-            print("MTF horizontal")
+            print(f"  Found: {file_name}")
             data = ReX.process_file(file_path, target_frequencies, 'MTF', exportFormat)
             for freq, value in data.items():
                 results[freq]['MTF Horizontal'] = value
@@ -367,10 +522,10 @@ def calculateMTF(path, conversion, a, b, exportFormat, progress_callback=None, r
             final_df.to_excel(output_file_path)
         elif exportFormat == 'csv':
             output_file_path = os.path.join(path, 'MTF_to_DQE.csv')
-            final_df.to_excel(output_file_path)
+            final_df.to_csv(output_file_path)  # Fixed: was .to_excel() for csv
 
         print(f'Data saved as: {output_file_path}')
 
     progress_callback(100)
     progress_callback(0)
-    return {'dataframe': final_df, 'rois': rois}
+    return {'dataframe': final_df, 'rois': rois, 'modality': modality}
