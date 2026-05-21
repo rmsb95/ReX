@@ -108,66 +108,77 @@ class DQEWindow(QDialog, Form):
         self.setModal(True)
         self.nnps_file = None
         self.mtf_file = None
-        self.calculateButton.clicked.connect(self.run_calculation)
 
-        # Connect buttons with functions
+        # Connect buttons
+        self.calculateButton.clicked.connect(self.run_calculation)
         self.selectNPS.clicked.connect(self.select_nnps_file)
         self.selectMTF.clicked.connect(self.select_mtf_file)
 
+        # Update SNR² label whenever the beam quality selection changes,
+        # and populate it once immediately for the default selection.
+        self.beamQualityCombo.currentIndexChanged.connect(self.update_snr2_label)
+        self.update_snr2_label()
+
+    # ------------------------------------------------------------------
+    def update_snr2_label(self):
+        """Display the SNR² value that corresponds to the selected beam quality."""
+        from src.ReXDQE import SNR2_TABLE
+        quality = self.beamQualityCombo.currentText()
+        snr2 = SNR2_TABLE.get(quality, None)
+        if snr2 is not None:
+            self.snr2Label.setText(f"SNR² = {snr2:,} mm⁻² µGy⁻¹".replace(",", "."))
+        else:
+            self.snr2Label.setText("SNR² = —")
+
+    # ------------------------------------------------------------------
     def select_nnps_file(self):
-        # It opens a QFileDialog to select the NNPS_to_DQE file
-        file_name, _ = QFileDialog.getOpenFileName(self, "Selecciona el archivo NNPS_to_DQE", "",
-                                                   "All Files (*);;Excel Files (*.xlsx);;CSV Files (*.csv)")
+        file_name, _ = QFileDialog.getOpenFileName(
+            self, "Selecciona el archivo NNPS_to_DQE", "",
+            "All Files (*);;Excel Files (*.xlsx);;CSV Files (*.csv)"
+        )
         if file_name:
             if 'NNPS_to_DQE' in file_name:
                 self.nnps_file = file_name
                 print("Selected NNPS file:", file_name)
             else:
-                QMessageBox.warning(self, "Advertencia", "El archivo seleccionado no es NNPS_to_DQE.")
+                QMessageBox.warning(self, "Advertencia",
+                                    "El archivo seleccionado no es NNPS_to_DQE.")
                 self.nnps_file = None
 
+    # ------------------------------------------------------------------
     def select_mtf_file(self):
-        # It opens a QFileDialog to select the MTF_to_DQE file
-        file_name, _ = QFileDialog.getOpenFileName(self, "Selecciona el archivo MTF_to_DQE", "",
-                                                   "All Files (*);;Excel Files (*.xlsx);;CSV Files (*.csv)")
+        file_name, _ = QFileDialog.getOpenFileName(
+            self, "Selecciona el archivo MTF_to_DQE", "",
+            "All Files (*);;Excel Files (*.xlsx);;CSV Files (*.csv)"
+        )
         if file_name:
             if 'MTF_to_DQE' in file_name:
                 self.mtf_file = file_name
                 print("Selected MTF file:", file_name)
             else:
-                QMessageBox.warning(self, "Advertencia", "El archivo seleccionado no es MTF_to_DQE.")
+                QMessageBox.warning(self, "Advertencia",
+                                    "El archivo seleccionado no es MTF_to_DQE.")
                 self.mtf_file = None
 
+    # ------------------------------------------------------------------
     def run_calculation(self):
-        # Determinar el RQA seleccionado
-        if self.Button_RQA3.isChecked():
-            beamQuality = "RQA3"
-        elif self.Button_RQA5.isChecked():
-            beamQuality = "RQA5"
-        elif self.Button_RQA7.isChecked():
-            beamQuality = "RQA7"
-        elif self.Button_RQA9.isChecked():
-            beamQuality = "RQA9"
-
+        beamQuality = self.beamQualityCombo.currentText()
         kermaAire = self.kermaValue.value()
 
-        # Comprobar que ambos archivos han sido seleccionados
         if not self.nnps_file or not self.mtf_file:
-            QMessageBox.warning(self, "Error", "Por favor, selecciona ambos archivos antes de ejecutar el cálculo.")
+            QMessageBox.warning(self, "Error",
+                                "Por favor, selecciona ambos archivos antes de ejecutar el cálculo.")
             return
 
-        # Llamada a la función que calcula la DQE
         result = calculateDQE(self.nnps_file, self.mtf_file, beamQuality, kermaAire)
 
-        # Mostrar resultados en tabla y gráfica # PENDIENTE REVISAR
-        # ReX.show_results_table_and_graph(result, "Resultados de DQE")
-
-        # Guardar el archivo
         options = QFileDialog.Options()
-        file_path, _ = QFileDialog.getSaveFileName(self, "Selecciona directorio para guardar el archivo",
-                                                   "/home/qt_user/Documents/DQE.xlsx",
-                                                   "All Files (*);;Excel Files (*.xlsx);;CSV Files (*.csv)",
-                                                   options=options)
+        file_path, _ = QFileDialog.getSaveFileName(
+            self, "Selecciona directorio para guardar el archivo",
+            "/home/qt_user/Documents/DQE.xlsx",
+            "All Files (*);;Excel Files (*.xlsx);;CSV Files (*.csv)",
+            options=options
+        )
         if file_path:
             if file_path.endswith('.csv'):
                 result.to_csv(file_path, index=False)
@@ -175,7 +186,7 @@ class DQEWindow(QDialog, Form):
                 result.to_excel(file_path, index=False)
 
         self.log_signal.emit("DQE calculada.")
-        QMessageBox.information(self, "Resultado", f"La ejecución ha finalizado.")
+        QMessageBox.information(self, "Resultado", "La ejecución ha finalizado.")
 
 
 class MainWindow(QMainWindow, Ui_MainWindow):
